@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DFA Network Map — Media</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600&family=Jost:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --bg:#f7f4ef;--panel:#fff;--panel2:#f2efe9;--border:#e2ddd4;--border2:#ede9e2;
+  --text:#1c1814;--muted:#7a736a;--muted2:#b8b0a4;--accent:#8c6d3f;--accent-light:#f5ede0;
+  --green:#1D9E75;--red:#e53935;--yellow:#f59e0b;--blue:#3b82f6;
+  --status-1:#e53935;--status-2:#f59e0b;--status-3:#3b82f6;--status-4:#1D9E75;
+}
+body{font-family:'Jost',sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:hidden;}
+
+/* TOP BAR */
+.topbar{display:flex;align-items:center;gap:0;background:var(--panel);border-bottom:1px solid var(--border);flex-shrink:0;padding:0 20px;height:52px;}
+.app-title{font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:600;color:var(--accent);letter-spacing:.02em;margin-right:24px;}
+.app-sub{font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted2);font-weight:600;}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:10px;}
+
+/* STORE + MONTH TABS */
+.tab-bar{display:flex;align-items:stretch;gap:0;background:var(--panel2);border-bottom:1px solid var(--border);flex-shrink:0;padding:0 20px;}
+.tab-btn{font-family:'Jost',sans-serif;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px;padding:8px 16px;border:none;background:none;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:color .15s;}
+.tab-btn:hover{color:var(--text);}
+.tab-btn.active{color:var(--accent);border-bottom-color:var(--accent);}
+.tab-sep{width:1px;background:var(--border);margin:8px 4px;}
+
+/* MONTH NAV */
+.month-nav{display:flex;align-items:center;gap:0;padding:0 20px;background:var(--panel2);border-bottom:1px solid var(--border);flex-shrink:0;}
+.mbtn{font-family:'Jost',sans-serif;font-size:11px;font-weight:500;padding:6px 14px;border:none;background:none;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;}
+.mbtn:hover{color:var(--text);}
+.mbtn.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:700;}
+
+/* MAIN CONTENT */
+.main{flex:1;overflow:hidden;display:flex;flex-direction:column;}
+
+/* SUMMARY ROW */
+.summary-bar{display:flex;gap:0;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--panel);}
+.sum-card{flex:1;padding:12px 20px;border-right:1px solid var(--border2);text-align:center;}
+.sum-card:last-child{border-right:none;}
+.sum-num{font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:600;line-height:1;}
+.sum-lbl{font-size:8px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-top:3px;}
+.sum-num.booked{color:var(--green);}
+.sum-num.available{color:var(--accent);}
+.sum-num.pending{color:var(--yellow);}
+
+/* SCREEN GRID */
+.screen-grid{flex:1;overflow-y:auto;padding:20px;display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;align-content:start;}
+
+/* SCREEN CARD */
+.screen-card{background:var(--panel);border:1px solid var(--border);border-radius:4px;overflow:hidden;cursor:pointer;transition:box-shadow .15s;}
+.screen-card:hover{box-shadow:0 4px 16px rgba(0,0,0,0.12);}
+.screen-card.available{border-color:#d4ece3;background:#f6fdf9;}
+.screen-card.booked{border-color:#e2ddd4;}
+.screen-card.unknown{border-color:var(--border2);opacity:.75;}
+.sc-header{display:flex;align-items:center;gap:10px;padding:12px 14px 8px;}
+.sc-type-badge{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;padding:2px 7px;border-radius:10px;flex-shrink:0;}
+.sc-type-LED{background:#e8f0fe;color:#1a56db;}
+.sc-type-Gate{background:#fce8de;color:#8c3a00;}
+.sc-type-Totem{background:#f0e8fe;color:#5b21b6;}
+.sc-type-Facade{background:#e8fee8;color:#166534;}
+.sc-type-POS{background:#fef3e8;color:#92400e;}
+.sc-name{font-size:13px;font-weight:700;color:var(--text);flex:1;}
+.sc-store{font-size:9px;color:var(--muted2);text-align:right;}
+.sc-brand{padding:0 14px 8px;font-size:15px;font-weight:600;color:var(--text);}
+.sc-brand.vacant{color:var(--muted2);font-style:italic;font-weight:400;font-size:13px;}
+.sc-dims{padding:0 14px 4px;font-size:9px;color:var(--muted2);}
+.sc-player{padding:0 14px 10px;font-size:10px;color:var(--muted);font-weight:500;}
+.sc-status{padding:10px 14px;border-top:1px solid var(--border2);display:flex;align-items:center;gap:8px;}
+.sc-status-lbl{font-size:9px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted2);font-weight:600;flex:1;}
+.status-dots{display:flex;align-items:center;gap:0;}
+.sdot{width:12px;height:12px;border-radius:50%;border:2px solid #ccc;background:transparent;flex-shrink:0;}
+.sline{width:12px;height:2px;background:#e0dbd4;flex-shrink:0;}
+.sdot.s1{border-color:var(--status-1);}.sdot.s1.on{background:var(--status-1);border-color:var(--status-1);}
+.sdot.s2{border-color:var(--status-2);}.sdot.s2.on{background:var(--status-2);border-color:var(--status-2);}
+.sdot.s3{border-color:var(--status-3);}.sdot.s3.on{background:var(--status-3);border-color:var(--status-3);}
+.sdot.s4{border-color:var(--status-4);}.sdot.s4.on{background:var(--status-4);border-color:var(--status-4);}
+.sc-status-text{font-size:10px;font-weight:600;}
+.sc-status-text.s1{color:var(--status-1);}
+.sc-status-text.s2{color:var(--status-2);}
+.sc-status-text.s3{color:var(--status-3);}
+.sc-status-text.s4{color:var(--status-4);}
+.sc-status-text.vacant{color:var(--muted2);}
+
+/* MULTI-BRAND */
+.sc-brands{padding:0 14px 8px;display:flex;flex-direction:column;gap:3px;}
+.sc-brand-row{display:flex;align-items:center;gap:8px;font-size:12px;}
+.sc-brand-name{font-weight:600;flex:1;}
+.sc-brand-status-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+
+/* MONTH CALENDAR ROW */
+.sc-calendar{display:flex;gap:1px;padding:0 14px 10px;}
+.sc-cal-cell{flex:1;text-align:center;padding:3px 2px;border-radius:2px;font-size:8px;font-weight:600;min-width:0;}
+.sc-cal-cell.booked{background:var(--accent);color:white;}
+.sc-cal-cell.cur-month{outline:2px solid var(--accent);outline-offset:-1px;}
+.sc-cal-cell.vacant{background:var(--border2);color:var(--muted2);}
+.sc-cal-cell.future{background:var(--border);color:var(--muted2);}
+
+/* LOADING */
+.loading{display:flex;align-items:center;justify-content:center;flex:1;flex-direction:column;gap:16px;color:var(--muted);}
+.loading-spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* FILTER BAR */
+.filter-bar{display:flex;align-items:center;gap:8px;padding:8px 20px;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--panel);}
+.filter-search{flex:1;font-family:'Jost',sans-serif;font-size:12px;padding:5px 10px;border:1px solid var(--border2);border-radius:3px;background:#faf8f4;color:var(--text);outline:none;}
+.filter-search:focus{border-color:var(--accent);}
+.filter-btn{font-family:'Jost',sans-serif;font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;padding:4px 10px;border:1px solid var(--border2);border-radius:3px;background:var(--panel2);color:var(--muted);cursor:pointer;}
+.filter-btn.active{background:var(--accent);border-color:var(--accent);color:white;}
+
+/* EMPTY STATE */
+.empty-state{display:flex;align-items:center;justify-content:center;flex:1;color:var(--muted2);font-size:13px;font-style:italic;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="app-title">DFA Network Map</div>
+  <div class="app-sub">Media</div>
+  <div class="topbar-right">
+    <span id="loadStatus" style="font-size:10px;color:var(--muted2);"></span>
+  </div>
+</div>
+
+<div class="tab-bar" id="storeTabBar">
+  <button class="tab-btn active" onclick="setStore('SFO A')" id="tab-SFO A">SFO A</button>
+  <button class="tab-btn" onclick="setStore('SFO G')" id="tab-SFO G">SFO G</button>
+  <button class="tab-btn" onclick="setStore('LAX TBIT')" id="tab-LAX TBIT">LAX TBIT</button>
+</div>
+
+<div class="month-nav" id="monthNav"></div>
+
+<div class="filter-bar">
+  <input class="filter-search" id="searchInput" placeholder="Search screen or brand…" oninput="renderGrid()">
+  <button class="filter-btn active" id="filter-all" onclick="setFilter('all')">All</button>
+  <button class="filter-btn" id="filter-booked" onclick="setFilter('booked')">Booked</button>
+  <button class="filter-btn" id="filter-available" onclick="setFilter('available')">Available</button>
+  <button class="filter-btn" id="filter-issue" onclick="setFilter('issue')">Needs Attention</button>
+</div>
+
+<div class="summary-bar" id="summaryBar"></div>
+
+<div class="main">
+  <div class="loading" id="loadingView">
+    <div class="loading-spinner"></div>
+    <span>Loading media data…</span>
+  </div>
+  <div class="screen-grid" id="screenGrid" style="display:none;"></div>
+</div>
+
+<script>
+const GITHUB_BASE = 'https://jeffenlow.github.io/dfa_birdseye/';
+const ACTIVATIONS_URL = GITHUB_BASE + 'Activations/DFA_Master_Template_All_NAM.xlsx';
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const MONTHS_FULL = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const STATUS_STEPS = [
+  {label:'Not Received', key:'not received', cls:'s1'},
+  {label:'Received',     key:'received',     cls:'s2'},
+  {label:'Scheduled',    key:'scheduled',    cls:'s3'},
+  {label:'Running',      key:'running',      cls:'s4'}
+];
+
+var activeStore = 'SFO G';
+var activeMonth = new Date().getMonth();
+var activeFilter = 'all';
+var SCREENS = {}; // store -> [{id, name, type, dims, player, brands:{mi:brand}, statuses:{mi:status}, multi:[]}]
+
+// ── Data loading ──────────────────────────────────────────────────────────────
+async function loadData() {
+  try {
+    document.getElementById('loadStatus').textContent = 'Loading…';
+    var resp = await fetch(ACTIVATIONS_URL + '?t=' + Date.now());
+    if (!resp.ok) throw new Error('Fetch failed: ' + resp.status);
+    var ab = await resp.arrayBuffer();
+    var wb = XLSX.read(new Uint8Array(ab), {type:'array', defval:''});
+
+    // Find Media Rentals sheet
+    var sheetName = wb.SheetNames.find(function(n){ return n.toLowerCase().indexOf('media') >= 0; }) || wb.SheetNames[0];
+    var ws = wb.Sheets[sheetName];
+    var rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
+
+    parseMediaRentals(rows);
+    document.getElementById('loadStatus').textContent = '';
+    document.getElementById('loadingView').style.display = 'none';
+    document.getElementById('screenGrid').style.display = '';
+    renderGrid();
+  } catch(e) {
+    document.getElementById('loadStatus').textContent = 'Error: ' + e.message;
+    document.getElementById('loadingView').innerHTML = '<div style="color:#e53935;font-size:13px;">Failed to load: ' + e.message + '<br><br><button onclick="loadData()" style="margin-top:8px;padding:6px 16px;cursor:pointer;">Retry</button></div>';
+  }
+}
+
+function parseMediaRentals(rows) {
+  var hdr = rows[2] || [];
+  // Detect month cols and status cols
+  var mCols = {}, sCols = {};
+  var MO = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+  var FULL_MO = ['JANUARY','FEBRUARY','MARCH','APRIL','MAY','JUNE','JULY','AUGUST','SEPTEMBER','OCTOBER','NOVEMBER','DECEMBER'];
+  hdr.forEach(function(v, i) {
+    var u = (v||'').toString().trim().toUpperCase();
+    var mi = MO.indexOf(u); if (mi < 0) mi = FULL_MO.indexOf(u);
+    if (mi >= 0) {
+      mCols[mi] = i;
+      var next = (hdr[i+1]||'').toString().toUpperCase();
+      if (next.indexOf('STATUS') >= 0) sCols[mi] = i+1;
+    }
+  });
+  // Find column indices
+  var idCol=0, nameCol=1, playerCol=2, storeCol=3, dimsCol=5, typeCol=6;
+
+  // Parse rows
+  var curStore = '';
+  var screenMap = {}; // key = store+':'+id -> screen object
+
+  rows.slice(3).forEach(function(row) {
+    if (!row || !row[0]) return;
+    var v0 = row[0].toString();
+    if (v0.indexOf('✈') >= 0) {
+      curStore = v0.replace(/✈/g,'').trim().split('—')[0].trim();
+      return;
+    }
+    if (v0.startsWith('▶')) return;
+
+    var sid = v0.trim();
+    var name = (row[nameCol]||'').toString().trim();
+    var player = (row[playerCol]||'').toString().trim();
+    var dims = (row[dimsCol]||'').toString().trim();
+    var type = (row[typeCol]||'').toString().trim();
+    var store = (row[storeCol]||curStore||'').toString().trim();
+
+    var key = store + ':' + sid;
+    if (!screenMap[key]) {
+      screenMap[key] = {
+        id: sid, name: name||sid, type: type, dims: dims, player: player,
+        store: store, brands: {}, statuses: {}, rows: []
+      };
+      if (!SCREENS[store]) SCREENS[store] = [];
+      SCREENS[store].push(screenMap[key]);
+    }
+    var sc = screenMap[key];
+    if (!sc.dims && dims) sc.dims = dims;
+    if (!sc.player && player) sc.player = player;
+
+    // Accumulate brands and statuses per month
+    Object.keys(mCols).forEach(function(miStr) {
+      var mi = parseInt(miStr);
+      var brand = (row[mCols[mi]]||'').toString().replace(/\u00a0/g,' ').trim();
+      var status = sCols[mi] ? (row[sCols[mi]]||'').toString().trim() : '';
+      if (brand) {
+        if (!sc.brands[mi]) sc.brands[mi] = brand;
+        else if (sc.brands[mi].indexOf(brand) < 0) sc.brands[mi] += ' / ' + brand;
+      }
+      if (status && !sc.statuses[mi]) sc.statuses[mi] = status;
+    });
+  });
+}
+
+// ── UI helpers ────────────────────────────────────────────────────────────────
+function setStore(store) {
+  activeStore = store;
+  document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
+  var btn = document.getElementById('tab-' + store);
+  if (btn) btn.classList.add('active');
+  renderGrid();
+}
+
+function setMonth(mi) {
+  activeMonth = mi;
+  document.querySelectorAll('.mbtn').forEach(function(b, i){ b.classList.toggle('active', i === mi); });
+  renderGrid();
+}
+
+function setFilter(f) {
+  activeFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(function(b){ b.classList.remove('active'); });
+  var btn = document.getElementById('filter-' + f);
+  if (btn) btn.classList.add('active');
+  renderGrid();
+}
+
+function statusIdx(val) {
+  if (!val) return -1;
+  var raw = val.toLowerCase().trim();
+  for (var i = 0; i < STATUS_STEPS.length; i++) {
+    if (raw.indexOf(STATUS_STEPS[i].key) >= 0) return i;
+  }
+  return -1;
+}
+
+function statusDotsHtml(statusVal) {
+  var idx = statusIdx(statusVal);
+  var html = '<div class="status-dots">';
+  STATUS_STEPS.forEach(function(s, i) {
+    if (i > 0) html += '<div class="sline"></div>';
+    html += '<div class="sdot ' + s.cls + (i === idx ? ' on' : '') + '" title="' + s.label + '"></div>';
+  });
+  return html + '</div>';
+}
+
+function calRowHtml(sc) {
+  var html = '<div class="sc-calendar">';
+  MONTHS.forEach(function(m, i) {
+    var brand = sc.brands[i] || '';
+    var cls = brand ? 'booked' : (i < activeMonth ? 'vacant' : 'future');
+    if (i === activeMonth) cls += ' cur-month';
+    var abbr = brand ? m.slice(0,1) : m.slice(0,1);
+    html += '<div class="sc-cal-cell ' + cls + '" title="' + m + (brand ? ': ' + brand : ' — Available') + '">' + abbr + '</div>';
+  });
+  return html + '</div>';
+}
+
+// ── Main render ───────────────────────────────────────────────────────────────
+function renderGrid() {
+  var screens = (SCREENS[activeStore] || []);
+  var q = (document.getElementById('searchInput').value || '').toLowerCase().trim();
+
+  // Filter
+  var filtered = screens.filter(function(sc) {
+    var brand = sc.brands[activeMonth] || '';
+    var status = sc.statuses[activeMonth] || '';
+    var si = statusIdx(status);
+
+    if (q && sc.name.toLowerCase().indexOf(q) < 0 && brand.toLowerCase().indexOf(q) < 0) return false;
+    if (activeFilter === 'booked' && !brand) return false;
+    if (activeFilter === 'available' && brand) return false;
+    if (activeFilter === 'issue') {
+      // Needs attention = booked but status is not Running, or booked with no status
+      if (!brand) return false;
+      if (si === 3) return false; // Running is fine
+      return true;
+    }
+    // Skip DGX sub-screens in main view (they're part of totems)
+    if (sc.id.match(/^DGX_\d+$/i) && sc.id !== 'totems') return false;
+    return true;
+  });
+
+  // Summary
+  var total = screens.filter(function(sc){ return !sc.id.match(/^DGX_\d+$/i); }).length;
+  var booked = 0, available = 0, running = 0, issues = 0;
+  screens.forEach(function(sc) {
+    if (sc.id.match(/^DGX_\d+$/i)) return;
+    var brand = sc.brands[activeMonth] || '';
+    var si = statusIdx(sc.statuses[activeMonth] || '');
+    if (brand) { booked++; if (si === 3) running++; else if (si >= 0) issues++; }
+    else available++;
+  });
+
+  var sb = document.getElementById('summaryBar');
+  sb.innerHTML = ''
+    + '<div class="sum-card"><div class="sum-num">' + total + '</div><div class="sum-lbl">Total Screens</div></div>'
+    + '<div class="sum-card"><div class="sum-num booked">' + booked + '</div><div class="sum-lbl">Booked</div></div>'
+    + '<div class="sum-card"><div class="sum-num available">' + available + '</div><div class="sum-lbl">Available</div></div>'
+    + '<div class="sum-card"><div class="sum-num" style="color:var(--status-4);">' + running + '</div><div class="sum-lbl">Running</div></div>'
+    + '<div class="sum-card"><div class="sum-num" style="color:var(--yellow);">' + issues + '</div><div class="sum-lbl">Needs Attention</div></div>';
+
+  var grid = document.getElementById('screenGrid');
+  if (!filtered.length) {
+    grid.innerHTML = '<div class="empty-state">No screens match the current filter.</div>';
+    return;
+  }
+
+  // Group by type
+  var typeOrder = ['LED','Gate','Totem','Facade','POS',''];
+  filtered.sort(function(a,b) {
+    var ta = typeOrder.indexOf(a.type), tb = typeOrder.indexOf(b.type);
+    if (ta < 0) ta = 99; if (tb < 0) tb = 99;
+    if (ta !== tb) return ta - tb;
+    return a.name.localeCompare(b.name);
+  });
+
+  grid.innerHTML = filtered.map(function(sc) {
+    var brand = sc.brands[activeMonth] || '';
+    var status = sc.statuses[activeMonth] || '';
+    var si = statusIdx(status);
+    var statusLabel = si >= 0 ? STATUS_STEPS[si].label : (brand ? 'Status Unknown' : 'Available');
+    var statusCls = si >= 0 ? STATUS_STEPS[si].cls : (brand ? '' : 'vacant');
+    var cardCls = brand ? 'booked' : 'available';
+
+    // Multi-brand rows (brands split by /)
+    var brandParts = brand ? brand.split(/\s*\/\s*/) : [];
+    var brandHtml = '';
+    if (brandParts.length > 1) {
+      brandHtml = '<div class="sc-brands">' + brandParts.map(function(b,i) {
+        return '<div class="sc-brand-row"><span class="sc-brand-name">' + esc(b.trim()) + '</span></div>';
+      }).join('') + '</div>';
+    } else {
+      brandHtml = '<div class="sc-brand' + (brand?'':' vacant') + '">' + esc(brand||'Available') + '</div>';
+    }
+
+    return '<div class="screen-card ' + cardCls + '">'
+      + '<div class="sc-header">'
+      +   '<span class="sc-type-badge sc-type-' + sc.type + '">' + esc(sc.type||'Screen') + '</span>'
+      +   '<span class="sc-name">' + esc(sc.name) + '</span>'
+      + '</div>'
+      + brandHtml
+      + (sc.dims ? '<div class="sc-dims">' + esc(sc.dims) + '</div>' : '')
+      + (sc.player ? '<div class="sc-player">Player: ' + esc(sc.player) + '</div>' : '')
+      + calRowHtml(sc)
+      + '<div class="sc-status">'
+      +   '<span class="sc-status-lbl">Content Status</span>'
+      +   statusDotsHtml(status)
+      +   '<span class="sc-status-text ' + statusCls + '">' + statusLabel + '</span>'
+      + '</div>'
+      + '</div>';
+  }).join('');
+}
+
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+(function init() {
+  // Month nav
+  var nav = document.getElementById('monthNav');
+  MONTHS.forEach(function(m, i) {
+    var btn = document.createElement('button');
+    btn.className = 'mbtn' + (i === activeMonth ? ' active' : '');
+    btn.textContent = m;
+    btn.onclick = (function(idx){ return function(){ setMonth(idx); }; })(i);
+    nav.appendChild(btn);
+  });
+  loadData();
+})();
+</script>
+</body>
+</html>
