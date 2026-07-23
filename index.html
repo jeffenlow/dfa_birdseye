@@ -566,6 +566,9 @@ body{font-family:'Jost',sans-serif;background:var(--bg);color:var(--text);displa
 .sp-group-label{font-size:10px;text-transform:uppercase;letter-spacing:1.5px;padding:10px 8px 5px;font-weight:600;font-family:'Jost',sans-serif;opacity:0.75;}
 .sp-change-dot{width:7px;height:7px;background:#e53935;border-radius:50%;border:1.5px solid white;flex-shrink:0;margin-left:4px;align-self:center;box-shadow:0 0 0 1px #e5393540;}
 .sp-group-hdr{display:flex;align-items:center;gap:4px;padding:8px 8px 4px;user-select:none;}
+.sp-master-row{display:flex;align-items:center;gap:6px;padding:8px 10px;border-bottom:1px solid var(--border);background:rgba(0,0,0,0.015);}
+.sp-kind-hdr{display:flex;align-items:center;gap:4px;padding:6px 8px 3px 20px;user-select:none;border-top:1px dashed rgba(0,0,0,0.05);}
+.sp-kind-hdr:first-child{border-top:none;}
 .sp-group-hdr:hover{background:rgba(0,0,0,0.02);}
 .sp-group-arrow{font-size:8px;display:inline-block;transition:transform .18s;color:var(--muted2);cursor:pointer;}
 .sp-group-arrow.closed{transform:rotate(-90deg);}
@@ -1395,6 +1398,46 @@ body{font-family:'Jost',sans-serif;background:var(--bg);color:var(--text);displa
   display:flex;align-items:center;justify-content:center;
 }
 .cal-item.done .cal-name{color:#1D9E75;}
+
+/* ── iPad / tablet adaptations ─────────────────────────────────────── */
+/* Narrower viewports (iPad landscape 1024 / portrait 768): reclaim chrome space */
+@media (max-width:1180px){
+  .space-panel{width:400px;}
+  .store-title{min-width:0;font-size:16px;}
+  .topbar{padding:0 14px;gap:8px;flex-wrap:nowrap;overflow-x:auto;}
+  .month-nav{padding:0 10px;overflow-x:auto;}
+  .sidebar{width:118px;}
+}
+/* iPad portrait & small tablets: space panel floats OVER the map instead of
+   squeezing it, so the floor plan keeps full width */
+@media (max-width:980px){
+  .main{position:relative;}
+  .space-panel{
+    position:absolute;right:0;top:0;bottom:0;z-index:340;
+    width:min(420px,86vw);
+    box-shadow:-8px 0 28px rgba(28,24,20,0.16);
+  }
+  .space-panel.collapsed{width:28px;box-shadow:none;}
+  .sidebar{width:104px;}
+  .fx-card-body{grid-template-columns:1fr;}
+}
+/* Touch devices: comfortable tap targets (44px-ish), regardless of width */
+@media (pointer:coarse){
+  /* Map pans/pinches via JS — stop Safari from scrolling/zooming the page instead */
+  .map-area{touch-action:none;}
+  .vtbtn{padding:10px 16px;font-size:12px;}
+  .mbtn{padding:13px 15px;font-size:12px;}
+  .lbtn{padding:9px 14px;}
+  .sb-item{padding:10px 14px;}
+  .sp-toggle{width:40px;min-width:40px;}
+  .sp-item{padding-top:10px;padding-bottom:10px;}
+  .hmbar-btn{min-width:38px;min-height:38px;}
+  .cp-header{min-height:44px;}
+  .fx-card-close{font-size:20px;padding:10px;}
+  .popup-close{font-size:20px;padding:8px;}
+  /* thin decorative scrollbars are pointless on touch */
+  .sp-list::-webkit-scrollbar,.sidebar::-webkit-scrollbar{width:0;}
+}
 </style>
 </head>
 <body>
@@ -3271,7 +3314,8 @@ function applyChangesFilterToMap(){
   allSpaces.forEach(function(sp){
     var el = document.getElementById('mrk-'+sp.id);
     if(!el) return;
-    var layerOff = layers[sp.layer]===false;
+    var layerOff = layers[sp.layer]===false
+      || (window._spCatHidden && window._spCatHidden[spTopCategory(sp)]);
     // Layer dimming
     if(layerOff){
       el.classList.add('map-pin-dimmed');
@@ -3318,6 +3362,31 @@ function toggleSpacePanel(){
   if(panel) panel.classList.toggle('collapsed', !_spPanelOpen);
 }
 
+// ── Category resolution for the Spaces panel ─────────────────────────
+// Primary source: the sheet's ZONE / DEPT (sp.zone, captured at sync).
+// Fallback: the static ASSETS_DATA category, then keyword heuristics.
+var _ASSETS_CAT=null;
+function _assetsCatFor(spId){
+  if(!_ASSETS_CAT){
+    _ASSETS_CAT={};
+    if(typeof ASSETS_DATA!=='undefined') ASSETS_DATA.forEach(function(r){ _ASSETS_CAT[r.store+'|'+r.id]=r.category; });
+  }
+  return _ASSETS_CAT[activeStore+'|'+spId]||'';
+}
+function spTopCategory(sp){
+  var c=((sp.zone||'')||_assetsCatFor(sp.id)).toLowerCase();
+  if(c.indexOf('vm')===0) return 'VM';
+  if(c.indexOf('beauty')===0) return 'Beauty';
+  if(c.indexOf('swt')===0) return 'SWT';
+  if(c.indexOf('fg')===0) return 'FG';
+  if(c.indexOf('media')===0) return 'Media';
+  if(/frag|cosmetic|\bcos\b/.test(c)) return 'Beauty';
+  if(/wine|spirit|liquor|tobacco/.test(c)) return 'SWT';
+  if(/food|gift/.test(c)) return 'FG';
+  if(sp.layer==='med') return 'Media';
+  return 'Other';
+}
+
 function buildSpacePanel(){
   var list  = document.getElementById('spList');
   var title = document.getElementById('spTitle');
@@ -3354,15 +3423,20 @@ function buildSpacePanel(){
   if(chgCnt) chgCnt.textContent = _chgCount ? _chgCount + ' space' + (_chgCount!==1?'s':'') : '';
 
   var LAYER_COLOR = {act:'var(--l-act)',med:'var(--l-med)',set:'var(--l-set)',end:'var(--l-end)',prm:'var(--l-prm)',spc:'var(--l-spc)'};
-  var LAYER_LABEL = {act:'Activations',med:'Media Rentals',set:'Store Owned',end:'Endcaps + Tables',prm:'Promos',spc:'Specs'};
-  var LAYER_ORDER = {act:0,set:1,end:2,med:3,prm:4,spc:5};
+  var LAYER_LABEL = {act:'Activations',med:'Brand Fixtures',set:'Store Owned',end:'End Caps',prm:'Promos',spc:'Specs'};
 
-  // Sort: logical layer order first, then alphabetically by label within each group
-  spaces = spaces.slice().sort(function(a,b){
-    var lo = (LAYER_ORDER[a.layer]||99) - (LAYER_ORDER[b.layer]||99);
-    if(lo!==0) return lo;
-    return a.label.localeCompare(b.label);
-  });
+  // Category-first organization: Beauty / SWT / FG / VM primary, space kind secondary.
+  var CAT_ORDER=['Beauty','SWT','FG','VM','Media','Other'];
+  var CAT_LABEL={Beauty:'Beauty',SWT:'SWT',FG:'FG',VM:'VM',Media:'Media',Other:'Other'};
+  // Per-category kind ordering (per ops preference); unlisted kinds append after.
+  var KIND_ORDER={
+    Beauty:['set','act','med'],
+    SWT:['end','act','set','med'],
+    FG:['act','set','med'],
+    VM:['set'],
+    Media:['med','act','set','end'],
+    Other:['act','set','end','med']
+  };
 
   var lastLayer = null;
   // Show/hide hm-controls
@@ -3389,58 +3463,91 @@ function buildSpacePanel(){
     return;
   }
 
-  // Collapsible layer groups — default all closed
-  if(!window._spGroupCollapsed){
-    window._spGroupCollapsed={act:true,set:true,end:true,med:true,prm:true,spc:true,promos:true};
-  }
-  var groups={}, groupOrder=[];
+  // Collapsible category groups — default all closed (keys are categories now;
+  // stale layer keys from older sessions are harmless)
+  if(!window._spGroupCollapsed){ window._spGroupCollapsed={}; }
+  CAT_ORDER.forEach(function(c){ if(window._spGroupCollapsed[c]===undefined) window._spGroupCollapsed[c]=true; });
+  if(window._spGroupCollapsed['promos']===undefined) window._spGroupCollapsed['promos']=true;
+
+  // Bucket: category -> kind(layer) -> spaces
+  var cats={};
   spaces.forEach(function(sp){
-    if(!groups[sp.layer]){groups[sp.layer]=[];groupOrder.push(sp.layer);}
-    groups[sp.layer].push(sp);
+    var cat=spTopCategory(sp);
+    if(!cats[cat]) cats[cat]={};
+    if(!cats[cat][sp.layer]) cats[cat][sp.layer]=[];
+    cats[cat][sp.layer].push(sp);
   });
+
   var html='';
-  groupOrder.forEach(function(layer){
-    var layerSpaces=groups[layer];
-    var col=LAYER_COLOR[layer]||'var(--muted2)';
-    var lbl=LAYER_LABEL[layer]||layer;
-    var gid='spgrp-'+layer;
-    var isClosed=_spSearchQuery ? false : !!window._spGroupCollapsed[layer];
-    var chgInLayer=layerSpaces.filter(function(sp){return hasAnyChange(sp,activeMonth);}).length;
-    var layerOn=layers[layer]!==false;
+  // Master visibility controls — start with Hide All, then turn on what you want
+  html+='<div class="sp-master-row">'
+    +'<span style="font-size:9px;text-transform:uppercase;letter-spacing:1.2px;font-weight:600;color:var(--muted2);flex:1;">Map Visibility</span>'
+    +'<button class="sp-grp-btn" onclick="spAllCats(true)" title="Show every space on the map">Show All</button>'
+    +'<button class="sp-grp-btn sp-vis-btn" onclick="spAllCats(false)" title="Hide every space on the map">Hide All</button>'
+    +'</div>';
+  CAT_ORDER.forEach(function(cat){
+    if(!cats[cat]) return;
+    var kindMap=cats[cat];
+    var kinds=(KIND_ORDER[cat]||[]).filter(function(k){return kindMap[k];});
+    Object.keys(kindMap).forEach(function(k){ if(kinds.indexOf(k)<0) kinds.push(k); });
+    var catSpaces=[]; kinds.forEach(function(k){ catSpaces=catSpaces.concat(kindMap[k]); });
+    var catCount=catSpaces.length;
+    var chgInCat=catSpaces.filter(function(sp){return hasAnyChange(sp,activeMonth);}).length;
+    var isClosed=_spSearchQuery ? false : !!window._spGroupCollapsed[cat];
+    var gid='spgrp-'+cat;
+    var catOn=!(window._spCatHidden&&window._spCatHidden[cat]);
+    // Media is one flat list — no kind sub-headers
+    var flatCat=(cat==='Media');
+
     html+='<div class="sp-group-hdr">'
-      +'<span class="sp-group-arrow'+(isClosed?' closed':'')+'" id="sgarr-'+layer+'" onclick="spToggleGroup(\''+layer+'\')" style="padding:4px 4px 4px 0;">&#9660;</span>'
-      +'<span style="font-size:10px;text-transform:uppercase;letter-spacing:1.5px;font-weight:600;color:'+col+';cursor:pointer;flex:1;opacity:'+(layerOn?'1':'0.4')+';" onclick="spToggleGroup(\''+layer+'\')">'
-      +escHtml(lbl)
-      +'<span style="font-weight:400;opacity:0.6;margin-left:5px;font-size:9px;">'+layerSpaces.length+'</span>'
-      +(chgInLayer?'<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#e53935;margin-left:5px;vertical-align:middle;"></span>':'')
+      +'<span class="sp-group-arrow'+(isClosed?' closed':'')+'" id="sgarr-'+cat+'" onclick="spToggleGroup(\''+cat+'\')" style="padding:4px 4px 4px 0;">&#9660;</span>'
+      +'<span style="font-size:10px;text-transform:uppercase;letter-spacing:1.5px;font-weight:600;color:var(--text);cursor:pointer;flex:1;opacity:'+(catOn?'1':'0.4')+';" onclick="spToggleGroup(\''+cat+'\')">'
+      +escHtml(CAT_LABEL[cat]||cat)
+      +'<span style="font-weight:400;opacity:0.6;margin-left:5px;font-size:9px;">'+catCount+'</span>'
+      +(chgInCat?'<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#e53935;margin-left:5px;vertical-align:middle;"></span>':'')
       +'</span>'
       +'<span class="sp-grp-btns" onclick="event.stopPropagation()">'
-      +'<button class="sp-grp-btn'+(layerOn?'':' active')+'" onclick="spLayerAll(\''+layer+'\')" title="Show all '+escHtml(lbl)+'">Show</button>'
-      +'<button class="sp-grp-btn sp-vis-btn'+(layerOn?'':' active')+'" onclick="spLayerNone(\''+layer+'\')" title="Hide all '+escHtml(lbl)+'">Hide</button>'
-      +(chgInLayer?'<button class="sp-grp-btn sp-grp-btn-chg" onclick="spLayerChanges(\''+layer+'\')" title="Show only changes in '+escHtml(lbl)+'">Chg</button>':'')
+      +'<button class="sp-grp-btn'+(catOn?'':' active')+'" onclick="spCatShow(\''+cat+'\')" title="Show all '+escHtml(cat)+' spaces on map">Show</button>'
+      +'<button class="sp-grp-btn sp-vis-btn'+(catOn?'':' active')+'" onclick="spCatHide(\''+cat+'\')" title="Hide all '+escHtml(cat)+' spaces on map">Hide</button>'
+      +(chgInCat?'<button class="sp-grp-btn sp-grp-btn-chg" onclick="spCatChanges(\''+cat+'\')" title="Show only changes in '+escHtml(cat)+'">Chg</button>':'')
       +'</span>'
       +'</div>';
     html+='<div class="sp-group-body'+(isClosed?' hidden':'')+'" id="'+gid+'">';
-    layerSpaces.forEach(function(sp){
-      var brand=sp.brands&&sp.brands[activeMonth]||'';
-      var isOff=_hmActive&&_hmVisible[sp.id]===false;
-      var dotColor=LAYER_COLOR[sp.layer]||'var(--muted)';
-      var dotStyle=_hmActive?'border-color:'+dotColor+';'+(isOff?'background:transparent;':'background:'+dotColor+';'):'background:'+dotColor+';';
-      var dotClass='sp-dot'+(_hmActive?' hm-toggle':'')+(isOff?' hm-off':'');
-      var dotClick=_hmActive?' onclick="event.stopPropagation();hmToggleSpace(\''+sp.id+'\')"':'';
-      var dotTitle=_hmActive?' title="'+(isOff?'Show':'Hide')+' on heat map"':'';
-      var primaryTxt,secondaryTxt;
-      if(_actBrandLabels&&!_hmActive&&brand){primaryTxt=brand;secondaryTxt=sp.label;}
-      else{primaryTxt=sp.label;secondaryTxt=brand||'';}
-      var spChange=hasAnyChange(sp,activeMonth);
-      html+='<div class="sp-item" id="spi-'+sp.id+'" data-spid="'+sp.id+'" onclick="spItemClick(this.dataset.spid)" onmouseenter="spPinHover(this.dataset.spid,true)" onmouseleave="spPinHover(this.dataset.spid,false)">'
-        +'<span class="'+dotClass+'" style="'+dotStyle+'"'+dotClick+dotTitle+'></span>'
-        +'<span style="flex:1;">'
-        +escHtml(primaryTxt)
-        +(secondaryTxt?'<span class="sp-brand">'+escHtml(secondaryTxt)+'</span>':'')
-        +'</span>'
-        +(spChange?'<span class="sp-change-dot" title="Changed from '+(activeMonth>0?MONTHS[activeMonth-1]:'prior')+'"></span>':'')
-        +'</div>';
+
+    kinds.forEach(function(layer){
+      var layerSpaces=kindMap[layer].slice().sort(function(a,b){return a.label.localeCompare(b.label);});
+      var col=LAYER_COLOR[layer]||'var(--muted2)';
+      var lbl=LAYER_LABEL[layer]||layer;
+      // Secondary header: space kind within the category (skipped for flat categories like Media)
+      if(!flatCat){
+        html+='<div class="sp-kind-hdr">'
+          +'<span style="font-size:9px;text-transform:uppercase;letter-spacing:1.2px;font-weight:600;color:'+col+';flex:1;">'
+          +escHtml(lbl)
+          +'<span style="font-weight:400;opacity:0.6;margin-left:5px;font-size:8px;">'+layerSpaces.length+'</span>'
+          +'</span>'
+          +'</div>';
+      }
+      layerSpaces.forEach(function(sp){
+        var brand=sp.brands&&sp.brands[activeMonth]||'';
+        var isOff=_hmActive&&_hmVisible[sp.id]===false;
+        var dotColor=LAYER_COLOR[sp.layer]||'var(--muted)';
+        var dotStyle=_hmActive?'border-color:'+dotColor+';'+(isOff?'background:transparent;':'background:'+dotColor+';'):'background:'+dotColor+';';
+        var dotClass='sp-dot'+(_hmActive?' hm-toggle':'')+(isOff?' hm-off':'');
+        var dotClick=_hmActive?' onclick="event.stopPropagation();hmToggleSpace(\''+sp.id+'\')"':'';
+        var dotTitle=_hmActive?' title="'+(isOff?'Show':'Hide')+' on heat map"':'';
+        var primaryTxt,secondaryTxt;
+        if(_actBrandLabels&&!_hmActive&&brand){primaryTxt=brand;secondaryTxt=sp.label;}
+        else{primaryTxt=sp.label;secondaryTxt=brand||'';}
+        var spChange=hasAnyChange(sp,activeMonth);
+        html+='<div class="sp-item" id="spi-'+sp.id+'" data-spid="'+sp.id+'" onclick="spItemClick(this.dataset.spid)" onmouseenter="spPinHover(this.dataset.spid,true)" onmouseleave="spPinHover(this.dataset.spid,false)">'
+          +'<span class="'+dotClass+'" style="'+dotStyle+'"'+dotClick+dotTitle+'></span>'
+          +'<span style="flex:1;">'
+          +escHtml(primaryTxt)
+          +(secondaryTxt?'<span class="sp-brand">'+escHtml(secondaryTxt)+'</span>':'')
+          +'</span>'
+          +(spChange?'<span class="sp-change-dot" title="Changed from '+(activeMonth>0?MONTHS[activeMonth-1]:'prior')+'"></span>':'')
+          +'</div>';
+      });
     });
     html+='</div>';
   });
@@ -3547,6 +3654,60 @@ function spPromoChanges(){
   });
   buildSpacePanel();
 }
+// ── Category-level visibility (Spaces panel) ─────────────────────────
+window._spCatHidden = window._spCatHidden || {};
+function _spCatSpaces(cat){
+  return (SPACES[activeStore]||[]).filter(function(sp){ return spTopCategory(sp)===cat; });
+}
+function spCatShow(cat){
+  if(_hmActive){
+    _spCatSpaces(cat).forEach(function(sp){ delete _hmVisible[sp.id]; });
+    buildSpacePanel(); buildHeatMap();
+    return;
+  }
+  delete window._spCatHidden[cat];
+  applyChangesFilterToMap();
+  buildSpacePanel();
+}
+function spCatHide(cat){
+  if(_hmActive){
+    _spCatSpaces(cat).forEach(function(sp){ _hmVisible[sp.id]=false; });
+    buildSpacePanel(); buildHeatMap();
+    return;
+  }
+  window._spCatHidden[cat]=true;
+  applyChangesFilterToMap();
+  buildSpacePanel();
+}
+function spCatChanges(cat){
+  // Show only changed spaces within this category (un-hides the category first)
+  delete window._spCatHidden[cat];
+  _spCatSpaces(cat).forEach(function(sp){
+    var el=document.getElementById('mrk-'+sp.id);
+    if(!el) return;
+    if(hasAnyChange(sp,activeMonth)) el.classList.remove('map-pin-dimmed');
+    else el.classList.add('map-pin-dimmed');
+  });
+  buildSpacePanel();
+}
+function spAllCats(show){
+  var catsPresent={};
+  (SPACES[activeStore]||[]).forEach(function(sp){ catsPresent[spTopCategory(sp)]=true; });
+  if(_hmActive){
+    (SPACES[activeStore]||[]).forEach(function(sp){
+      if(show) delete _hmVisible[sp.id]; else _hmVisible[sp.id]=false;
+    });
+    buildSpacePanel(); buildHeatMap();
+    return;
+  }
+  Object.keys(catsPresent).forEach(function(cat){
+    if(show) delete window._spCatHidden[cat];
+    else window._spCatHidden[cat]=true;
+  });
+  applyChangesFilterToMap();
+  buildSpacePanel();
+}
+
 function spLayerAll(layer){
   if(_hmActive){
     (SPACES[activeStore]||[]).forEach(function(sp){
@@ -3603,6 +3764,7 @@ function spToggleGroup(layer){
 }
 
 function spPinHover(id,on){
+  if(IS_TOUCH) return;
   var pin=document.getElementById("mrk-"+id);
   if(!pin) return;
   if(on){pin.classList.add("highlighted");pin.style.zIndex=500;}
@@ -3653,6 +3815,9 @@ function spItemClick(id){
 
 // ── VIEW TOGGLE ───────────────────────────────────────────────────────────
 var _activeView = 'map';
+// Touch device (iPad etc.): no real hover exists, so hover-driven effects are
+// skipped — Safari's synthetic hover leaves them stuck until the next tap.
+var IS_TOUCH = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
 
 function setView(v){
   _activeView = v;
@@ -4610,6 +4775,7 @@ function ssSyncSheetToSpaces(sheetName){
   var playerCol=hdr.findIndex(function(v){return (v||'').trim().toUpperCase()==='PLAYER ID'||(v||'').trim().toUpperCase()==='PLAYER';});
   var dimsCol=hdr.findIndex(function(v){return (v||'').trim().toUpperCase()==='DIMENSIONS'||(v||'').trim().toUpperCase()==='DIMENSION'||(v||'').trim().toUpperCase()==='DIMS';});
   var installDateCol=hdr.findIndex(function(v){var u=(v||'').trim().toUpperCase();return u==='INSTALL DATE'||u==='INSTALL'||u==='INSTALLS'||u.indexOf('INSTALL')===0;});
+  var zoneCol=hdr.findIndex(function(v){var u=(v||'').trim().toUpperCase();return u.indexOf('ZONE')===0;});
   var brandPctCol=hdr.findIndex(function(v){return (v||'').toString().trim().indexOf('%')>=0&&(v||'').toString().toLowerCase().indexOf('brand')>=0;});
   // Per-month status cols: e.g. 'JUL Status' at col after 'JUL'
   var statusCols={};
@@ -4686,6 +4852,12 @@ function ssSyncSheetToSpaces(sheetName){
     if(dimsCol>=0 && row[dimsCol]){
       var dimVal=(row[dimsCol]||'').toString().trim();
       if(dimVal) sp.spec = dimVal;
+    }
+    // ZONE / DEPT from the sheet — drives category grouping in the Spaces
+    // panel. Sync order matches sheet priority, so last write wins correctly.
+    if(zoneCol>=0 && row[zoneCol]){
+      var zv=row[zoneCol].toString().replace(/\u00a0/g,' ').trim();
+      if(zv) sp.zone=zv;
     }
     if(installDateCol>=0 && row[installDateCol]){
       var parsedInst=parseInstallRaw(row[installDateCol]);
@@ -5078,6 +5250,7 @@ function initSpacePanel(){
   });
 
   spList.addEventListener('mouseover', function(e){
+    if(IS_TOUCH) return;
     var item = e.target.closest('.sp-item');
     if(!item) return;
     var id = item.dataset.spid;
@@ -5184,9 +5357,18 @@ function initZoomPan(){
     if(area)area.classList.remove('panning');
   });
 
-  // Touch support (pan only — zoom is via buttons)
+  // Touch support: one finger pans, two fingers pinch-zoom
+  var _pinchDist=0, _pinchZoom=1, _pinchMidX=0, _pinchMidY=0;
+  function _touchDist(t){ var dx=t[0].clientX-t[1].clientX, dy=t[0].clientY-t[1].clientY; return Math.sqrt(dx*dx+dy*dy); }
   area.addEventListener('touchstart',function(e){
-    if(e.touches.length===1){
+    if(e.touches.length===2){
+      _dragging=false;
+      _pinchDist=_touchDist(e.touches);
+      _pinchZoom=_zoom;
+      var rect=area.getBoundingClientRect();
+      _pinchMidX=(e.touches[0].clientX+e.touches[1].clientX)/2-rect.left;
+      _pinchMidY=(e.touches[0].clientY+e.touches[1].clientY)/2-rect.top;
+    } else if(e.touches.length===1){
       _dragging=true;
       _dragStartX=e.touches[0].clientX;
       _dragStartY=e.touches[0].clientY;
@@ -5194,13 +5376,31 @@ function initZoomPan(){
     }
   },{passive:true});
   area.addEventListener('touchmove',function(e){
-    if(e.touches.length===1&&_dragging){
+    if(e.touches.length===2&&_pinchDist>0){
+      e.preventDefault(); // stop Safari page-zooming instead
+      var newZoom=Math.min(Math.max(_pinchZoom*(_touchDist(e.touches)/_pinchDist),0.4),6);
+      // Zoom toward pinch midpoint (same math as zoomBy)
+      _panX=_pinchMidX/newZoom - _pinchMidX/_zoom + _panX;
+      _panY=_pinchMidY/newZoom - _pinchMidY/_zoom + _panY;
+      _zoom=newZoom;
+      applyTransform();
+    } else if(e.touches.length===1&&_dragging){
       _panX=_dragPanX+(e.touches[0].clientX-_dragStartX)/_zoom;
       _panY=_dragPanY+(e.touches[0].clientY-_dragStartY)/_zoom;
       applyTransform();
     }
-  },{passive:true});
-  area.addEventListener('touchend',function(){_dragging=false;});
+  },{passive:false});
+  area.addEventListener('touchend',function(e){
+    if(e.touches.length<2) _pinchDist=0;
+    if(e.touches.length===0) _dragging=false;
+    else if(e.touches.length===1){
+      // Pinch ended with one finger still down — hand off to pan cleanly
+      _dragging=true;
+      _dragStartX=e.touches[0].clientX;
+      _dragStartY=e.touches[0].clientY;
+      _dragPanX=_panX;_dragPanY=_panY;
+    }
+  });
 }
 
 
@@ -5279,7 +5479,8 @@ function refreshMarkers(){
   (SPACES[activeStore]||[]).forEach(function(sp){
     var el=document.getElementById('mrk-'+sp.id);
     if(!el)return;
-    if(layers[sp.layer]){el.classList.remove('hidden');}
+    var catHidden=window._spCatHidden && window._spCatHidden[spTopCategory(sp)];
+    if(layers[sp.layer] && !catHidden){el.classList.remove('hidden');}
     else{el.classList.add('hidden');}
   });
 }
