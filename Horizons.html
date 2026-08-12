@@ -1,0 +1,2220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Horizons — DFA Sales &amp; Marketing Tracker</title>
+<style>
+:root{
+  /* palette carried from the Network Map */
+  --bg:#FAFAF8; --panel:#F5F0EA; --panelHi:#FFFFFF; --cream:#F5EFE3;
+  --rule:#E5DDD5; --rule2:#D6CCC0;
+  --ink:#1C1917; --ink2:#5F574E; --ink3:#7A736A;
+  --accent:#8C6D3F;
+  --pos:#1D9E75; --neg:#EF4444;
+
+  /* layer colours — activations blue / media green / store-owned purple, as on the map */
+  --sales:#8C6D3F; --loads:#2E7D9A; --fx:#7C5CBF; --camp:#2F6FD0;
+  --promo:#1D9E75; --moves:#C0392B; --notes:#C4761F;
+
+  --wknd:rgba(28,25,23,.045); --hol:rgba(140,109,63,.13);
+  --disp:"Cambria","Hoefler Text",Georgia,serif;
+  --body:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+  --mono:"SF Mono",Menlo,Consolas,"Roboto Mono",monospace;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:13px;overflow:hidden}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:var(--rule2);border-radius:5px}
+::-webkit-scrollbar-track{background:transparent}
+
+/* ---------- header ---------- */
+header{
+  display:flex;align-items:center;gap:16px;flex-wrap:wrap;
+  padding:9px 16px;border-bottom:1px solid var(--rule);background:var(--panelHi);
+}
+.homebtn{display:inline-flex;align-items:center;gap:6px;padding:6px 12px 6px 10px;flex:none}
+.homebtn .hi{font-size:15px;line-height:1;position:relative;top:-1px}
+.homebtn .ht{font-weight:600}
+.homebtn:hover{border-color:var(--accent);color:var(--ink);background:var(--cream)}
+body.pg-home .homebtn{display:none}
+.brand{display:flex;align-items:baseline;gap:9px;margin-right:2px;padding:3px 8px 3px 4px;border-radius:6px;cursor:pointer}
+.brand:hover{background:var(--cream)}
+.brand b{font-family:var(--disp);font-weight:700;font-size:19px;letter-spacing:.01em}
+.brand span{font-size:10px;letter-spacing:.16em;color:var(--accent);text-transform:uppercase;font-weight:600}
+.seg{display:flex;border:1px solid var(--rule2);border-radius:6px;overflow:hidden;background:var(--bg)}
+.seg button{
+  font-size:12px;font-weight:500;padding:6px 12px;color:var(--ink3);
+  border-right:1px solid var(--rule2);white-space:nowrap;
+}
+.seg button:last-child{border-right:none}
+.seg button[aria-pressed="true"]{background:var(--ink);color:#fff;font-weight:600}
+.fld{display:flex;align-items:center;gap:6px}
+.fld label{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink3);font-weight:600}
+select,input[type=date],input[type=text],textarea{
+  background:#fff;border:1px solid var(--rule2);color:var(--ink);
+  border-radius:5px;padding:5px 8px;font-family:var(--body);font-size:12.5px;
+}
+.spacer{flex:1}
+.mini{font-family:var(--mono);font-size:11px;color:var(--ink3)}
+
+/* ---------- shell ---------- */
+.shell{display:flex;height:calc(100% - 51px)}
+aside{
+  width:216px;flex:none;border-right:1px solid var(--rule);background:var(--panel);
+  overflow-y:auto;padding:10px 0 24px;
+}
+.rail-h{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink3);font-weight:600;padding:12px 14px 6px}
+.lyr{display:flex;align-items:center;gap:9px;padding:7px 14px;cursor:pointer;border-left:3px solid transparent}
+.lyr:hover{background:var(--cream)}
+.lyr .sw{width:9px;height:9px;border-radius:2px;flex:none;transition:opacity .15s}
+.lyr .nm{font-size:12.5px;flex:1;color:var(--ink2)}
+.lyr .ct{font-family:var(--mono);font-size:10.5px;color:var(--ink3)}
+.lyr.on{border-left-color:currentColor;background:var(--panelHi)}
+.lyr.on .nm{color:var(--ink);font-weight:600}
+.lyr.off .sw{opacity:.24}
+.rail-act{padding:8px 12px}
+.rail-act button{
+  display:block;width:100%;text-align:left;padding:7px 10px;margin-bottom:6px;background:#fff;
+  border:1px solid var(--rule2);border-radius:5px;font-size:12px;color:var(--ink2);
+}
+.rail-act button:hover{border-color:var(--accent);color:var(--ink)}
+.note-src{padding:2px 14px 12px;font-size:11px;line-height:1.55;color:var(--ink3)}
+.note-src b{color:var(--ink2);font-weight:600}
+.fpick{padding:2px 12px 6px}
+.fpick input{width:100%;font-size:12px;padding:5px 8px}
+.fp-quick{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.fp-quick button{font-size:10.5px;padding:3px 8px;border:1px solid var(--rule2);border-radius:12px;background:#fff;color:var(--ink3)}
+.fp-quick button:hover{border-color:var(--accent);color:var(--ink)}
+.fgrp{display:flex;align-items:center;gap:7px;padding:5px 12px;cursor:pointer;font-size:12px}
+.fgrp:hover{background:var(--cream)}
+.fgrp .cb{width:13px;height:13px;border:1.5px solid var(--rule2);border-radius:3px;flex:none;position:relative;background:#fff}
+.fgrp .cb.on{background:currentColor;border-color:currentColor}
+.fgrp .cb.on::after{content:"";position:absolute;left:3.5px;top:.5px;width:4px;height:8px;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg)}
+.fgrp .cb.some{background:currentColor;border-color:currentColor;opacity:.45}
+.fgrp .nm{flex:1;color:var(--ink2)}
+.fgrp .ct{font-family:var(--mono);font-size:10px;color:var(--ink3)}
+.fgrp .ar{font-size:9px;color:var(--ink3);width:8px}
+.frow{display:flex;align-items:center;gap:7px;padding:3px 12px 3px 30px;cursor:pointer;font-size:11.5px}
+.frow:hover{background:var(--cream)}
+.frow .cb{width:11px;height:11px;border:1.5px solid var(--rule2);border-radius:2px;flex:none;position:relative;background:#fff}
+.frow .cb.on{background:currentColor;border-color:currentColor}
+.frow .cb.on::after{content:"";position:absolute;left:2.5px;top:0;width:3px;height:7px;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg)}
+.frow .fc{font-family:var(--mono);font-size:11px;color:var(--ink);min-width:52px}
+.frow .fa{flex:1;color:var(--ink3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.frow .fp{font-family:var(--mono);font-size:10px;color:var(--ink3)}
+.p-sub{display:flex;align-items:center;gap:10px;padding:0 16px 6px}
+.p-sub .pick{font-family:var(--mono);font-size:10.5px;color:var(--ink3)}
+.mktbtn{display:inline-flex;align-items:center;gap:6px;font-size:11px;padding:3px 10px;border:1px solid var(--rule2);border-radius:14px;background:#fff;color:var(--ink3)}
+.mktbtn:hover{border-color:var(--accent);color:var(--ink)}
+.mktbtn.on{background:var(--cream);border-color:var(--accent);color:var(--ink);font-weight:600}
+.mktbtn .dash{width:14px;height:0;border-top:1.6px dashed var(--ink3)}
+.mktbtn.on .dash{border-top-color:var(--ink)}
+.p-foot{padding:4px 16px 9px;font-size:11.5px;color:var(--ink3);line-height:1.5;border-top:1px solid var(--rule);margin-top:2px}
+.seg-sm button{font-size:10.5px;padding:3px 9px}
+
+/* ---------- board ---------- */
+main{flex:1;overflow:auto;position:relative;background:var(--bg)}
+.board{padding:0 0 8px}
+.panel{border-bottom:1px solid var(--rule);position:relative;background:var(--panelHi)}
+.p-head{display:flex;align-items:center;gap:10px;padding:7px 16px 2px}
+.p-head h3{margin:0;font-family:var(--disp);font-weight:700;font-size:14px;letter-spacing:.01em}
+.p-head .sub{font-size:11px;color:var(--ink3)}
+.p-head .rt{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--ink2)}
+.p-head .lg{margin-left:auto;display:flex;gap:14px;flex-wrap:wrap;font-size:12px;font-weight:600}
+.p-head .lg i{font-style:normal;display:inline-flex;align-items:center;gap:6px}
+.p-head .lg em{width:14px;height:4px;border-radius:2px;display:inline-block;flex:none}
+/* standalone legend row — used where a panel carries several series */
+.p-leg{display:flex;flex-wrap:wrap;gap:7px 18px;padding:2px 16px 9px;align-items:center}
+.spine .p-leg{padding:6px 16px 5px;border-bottom:1px solid var(--rule)}
+.p-leg .k{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;color:var(--ink2)}
+.p-leg .k b{color:var(--ink);font-weight:600}
+.p-leg .k .sq{width:14px;height:14px;border-radius:3px;flex:none}
+.p-leg .k .ln{width:20px;height:0;border-top:3px solid;flex:none;border-radius:2px}
+.p-leg .k .dsh{width:20px;height:0;border-top:2.5px dashed;flex:none}
+.p-leg .k .tri{width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-bottom:11px solid;flex:none}
+.p-leg .k .dot{width:11px;height:11px;border-radius:50%;flex:none}
+.p-leg .k .val{font-family:var(--mono);font-size:11.5px;color:var(--ink3)}
+.p-leg .sep{width:1px;height:16px;background:var(--rule2)}
+svg{display:block;width:100%}
+.gl{stroke:var(--rule);stroke-width:1}
+.axl{fill:var(--ink3);font-family:var(--mono);font-size:9.5px}
+
+#scrub{position:absolute;top:0;bottom:0;width:1px;background:var(--accent);pointer-events:none;opacity:0;z-index:5}
+#scrub::before{content:"";position:absolute;inset:0 -13px;background:rgba(140,109,63,.09)}
+.readout{
+  position:fixed;z-index:40;pointer-events:none;opacity:0;transition:opacity .1s;
+  background:#fff;border:1px solid var(--rule2);border-left:3px solid var(--accent);
+  border-radius:7px;padding:10px 13px;min-width:196px;max-width:268px;
+  box-shadow:0 10px 30px rgba(28,25,23,.16);
+}
+.readout .rd{font-family:var(--disp);font-size:15px;font-weight:700}
+.readout .rf{font-family:var(--mono);font-size:10px;color:var(--accent);margin-bottom:6px}
+.readout .rr{display:flex;justify-content:space-between;gap:14px;font-size:11.5px;padding:1.5px 0}
+.readout .rr i{font-style:normal;color:var(--ink3)}
+.readout .rr b{font-family:var(--mono);font-weight:600}
+.readout .rn{margin-top:6px;padding-top:6px;border-top:1px solid var(--rule);font-size:11.5px;line-height:1.45;color:var(--ink2)}
+.readout .rn em{font-style:normal;font-weight:600}
+
+.spine{position:sticky;bottom:0;background:var(--panel);border-top:1px solid var(--rule2);z-index:6}
+.ruler{position:sticky;top:0;background:var(--panel);border-bottom:1px solid var(--rule2);z-index:7}
+
+/* ---------- modal ---------- */
+.scrim{position:fixed;inset:0;background:rgba(28,25,23,.42);display:none;align-items:center;justify-content:center;z-index:60;padding:16px}
+.scrim.on{display:flex}
+.modal{background:#fff;border:1px solid var(--rule2);border-radius:10px;width:min(470px,100%);max-height:88vh;overflow:auto;box-shadow:0 20px 60px rgba(28,25,23,.3)}
+.modal h4{margin:0;padding:14px 18px;border-bottom:1px solid var(--rule);font-family:var(--disp);font-size:16px;font-weight:700}
+.modal .bd{padding:16px 18px;display:grid;gap:11px}
+.modal .row{display:grid;gap:5px}
+.modal .row>label{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink3);font-weight:600}
+.modal textarea{resize:vertical;min-height:66px;line-height:1.5}
+.modal .ft{display:flex;gap:9px;padding:0 18px 16px;justify-content:flex-end}
+.btn{padding:8px 15px;border-radius:6px;border:1px solid var(--rule2);background:#fff;font-size:12.5px;font-weight:500;color:var(--ink2)}
+.btn.pri{background:var(--ink);border-color:var(--ink);color:#fff;font-weight:600}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{padding:4px 10px;border:1px solid var(--rule2);border-radius:20px;font-size:11.5px;color:var(--ink3);background:#fff}
+.chip[aria-pressed="true"]{background:var(--cream);border-color:var(--accent);color:var(--ink);font-weight:600}
+.exp{width:100%;font-family:var(--mono);font-size:11px;line-height:1.6;background:var(--panel);border:1px solid var(--rule);border-radius:6px;padding:10px;color:var(--ink2);min-height:150px;white-space:pre}
+
+/* period bar */
+.periodbar{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.pchip{flex:none;padding:4px 11px;border:1px solid var(--rule2);border-radius:14px;background:#fff;
+  font-size:11.5px;color:var(--ink2);display:inline-flex;align-items:center;gap:6px}
+.pchip:hover{border-color:var(--accent);color:var(--ink)}
+.pchip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#fff;font-weight:600}
+.pchip .pd{width:7px;height:7px;border-radius:50%;flex:none}
+
+/* pages */
+.page{display:none;height:calc(100% - 51px);overflow:auto;background:var(--bg)}
+body.pg-home .shell{display:none}
+body.pg-home #pgHome{display:block}
+body.pg-home .fld,body.pg-home #stamp{display:none}
+body.pg-snapshots .shell{display:none}
+body.pg-snapshots #pgSnapshots{display:block}
+body.pg-snapshots .fld{display:none}
+body.pg-builder .shell{display:none}
+body.pg-builder #pgBuilder{display:block}
+body.pg-builder .fld{display:none}
+body.pg-report .shell{display:none}
+body.pg-report #pgReport{display:block}
+body.pg-report .fld{display:none}
+
+/* archive grid */
+.arch{max-width:1180px;margin:0 auto;padding:26px 22px 60px}
+.arch h2{font-family:var(--disp);font-size:24px;margin:0 0 4px}
+.arch .lede{color:var(--ink3);font-size:13px;margin-bottom:22px}
+.agrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(268px,1fr));gap:16px}
+.acard{background:#fff;border:1px solid var(--rule);border-radius:9px;overflow:hidden;cursor:pointer;transition:box-shadow .15s,border-color .15s}
+.acard:hover{border-color:var(--accent);box-shadow:0 6px 20px rgba(28,25,23,.10)}
+.acard .thumb{height:132px;background:var(--panel);display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative}
+.acard .thumb img{width:100%;height:100%;object-fit:cover}
+.acard .thumb .none{color:var(--ink3);font-size:11.5px}
+.acard .thumb .cnt{position:absolute;right:7px;bottom:7px;background:rgba(28,25,23,.78);color:#fff;
+  font-size:10.5px;padding:2px 7px;border-radius:10px;font-family:var(--mono)}
+.acard .meta{padding:11px 13px 13px}
+.acard .nm{font-weight:600;font-size:13.5px;margin-bottom:3px}
+.acard .dt{font-family:var(--mono);font-size:10.5px;color:var(--ink3);margin-bottom:8px}
+.acard .kpi{display:flex;gap:14px;font-size:11.5px}
+.acard .kpi b{font-family:var(--mono);display:block;font-size:14px;font-weight:600}
+.acard .kpi i{font-style:normal;color:var(--ink3);font-size:10px;text-transform:uppercase;letter-spacing:.08em}
+.aempty{border:1px dashed var(--rule2);border-radius:9px;padding:44px 20px;text-align:center;color:var(--ink3);font-size:13px;line-height:1.6}
+
+/* report */
+.rep{max-width:900px;margin:0 auto;padding:0 0 60px;background:#fff;min-height:100%}
+.rep-bar{display:flex;gap:9px;align-items:center;padding:12px 40px;border-bottom:1px solid var(--rule);position:sticky;top:0;background:#fff;z-index:5}
+.rep-bd{padding:34px 40px}
+.rep h1{font-family:var(--disp);font-size:31px;margin:0 0 6px;line-height:1.15}
+.rep .rsub{color:var(--ink3);font-size:13px;margin-bottom:26px;font-family:var(--mono)}
+.rep h3{font-family:var(--disp);font-size:17px;margin:32px 0 12px;padding-bottom:6px;border-bottom:1px solid var(--rule)}
+.rep p{line-height:1.65;font-size:13.5px;color:var(--ink2)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(132px,1fr));gap:1px;background:var(--rule);border:1px solid var(--rule);border-radius:8px;overflow:hidden;margin:20px 0}
+.kpis div{background:#fff;padding:14px 15px}
+.kpis .k{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3);font-weight:600;margin-bottom:5px}
+.kpis .v{font-family:var(--mono);font-size:21px;font-weight:600}
+.kpis .s{font-size:11px;color:var(--ink3);margin-top:2px}
+.gal{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin:14px 0}
+.gal figure{margin:0;border:1px solid var(--rule);border-radius:7px;overflow:hidden;background:var(--panel)}
+.gal img{width:100%;display:block;aspect-ratio:4/3;object-fit:cover}
+.gal figcaption{padding:7px 10px;font-size:11.5px;color:var(--ink2);line-height:1.4}
+.rlist{margin:0;padding:0;list-style:none}
+.rlist li{padding:9px 0;border-bottom:1px solid var(--rule);font-size:13px;line-height:1.55}
+.rlist li:last-child{border-bottom:none}
+.rlist .t{font-weight:600}
+.rlist .m{color:var(--ink3);font-family:var(--mono);font-size:11px}
+.rchart{border:1px solid var(--rule);border-radius:8px;padding:12px 6px 6px;margin:16px 0;background:#fff}
+
+/* home */
+.home{max-width:980px;margin:0 auto;padding:64px 24px 80px}
+.home .eyebrow{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--accent);font-weight:700;margin-bottom:14px}
+.home h1{font-family:var(--disp);font-size:52px;line-height:1.04;margin:0 0 14px;letter-spacing:-.01em}
+.home .sub{font-size:15px;color:var(--ink2);line-height:1.65;max-width:560px;margin-bottom:46px}
+.paths{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.path{background:#fff;border:1px solid var(--rule);border-radius:12px;padding:26px 26px 24px;
+  cursor:pointer;text-align:left;display:flex;flex-direction:column;transition:border-color .16s,box-shadow .16s,transform .16s}
+.path:hover{border-color:var(--accent);box-shadow:0 12px 34px rgba(28,25,23,.10);transform:translateY(-2px)}
+.path .viz{height:96px;margin:-6px 0 18px}
+.path .viz svg{width:100%;height:100%;overflow:visible}
+.path h2{font-family:var(--disp);font-size:25px;margin:0 0 6px}
+.path .pd{font-size:13.5px;color:var(--ink2);line-height:1.6;margin-bottom:16px;flex:1}
+.path ul{margin:0 0 18px;padding:0;list-style:none}
+.path li{font-size:12.5px;color:var(--ink3);padding:3px 0 3px 15px;position:relative;line-height:1.45}
+.path li::before{content:"";position:absolute;left:0;top:10px;width:5px;height:5px;border-radius:50%;background:var(--rule2)}
+.path .cta{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:600;color:var(--accent)}
+.path .stat{font-family:var(--mono);font-size:11px;color:var(--ink3);margin-top:14px;padding-top:13px;border-top:1px solid var(--rule)}
+.home .foot{margin-top:40px;font-size:11.5px;color:var(--ink3);line-height:1.6;border-top:1px solid var(--rule);padding-top:16px}
+@media (max-width:760px){
+  .home{padding:36px 18px 60px}
+  .home h1{font-size:36px}
+  .paths{grid-template-columns:1fr}
+}
+
+/* builder */
+.bld{max-width:920px;margin:0 auto;padding:26px 22px 70px}
+.bld-h{display:flex;align-items:center;gap:12px;margin-bottom:6px}
+.bld h2{font-family:var(--disp);font-size:25px;margin:0}
+.bld .lede{color:var(--ink3);font-size:13px;margin-bottom:24px}
+.sect{background:#fff;border:1px solid var(--rule);border-radius:9px;padding:18px 20px;margin-bottom:16px}
+.sect h4{margin:0 0 3px;font-family:var(--disp);font-size:16px}
+.sect .hint{font-size:12px;color:var(--ink3);margin-bottom:14px;line-height:1.5}
+.sect .row{display:grid;gap:5px;margin-bottom:13px}
+.sect .row>label{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink3);font-weight:600}
+.sect .two{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+.sect input[type=text],.sect input[type=date],.sect select,.sect textarea{width:100%}
+.sect textarea{min-height:78px;line-height:1.55;resize:vertical}
+.bld-ft{display:flex;gap:10px;justify-content:flex-end;padding:4px 0 0}
+.autolist{margin:0;padding:0;list-style:none;border:1px solid var(--rule);border-radius:7px;overflow:hidden}
+.autolist li{padding:8px 12px;border-bottom:1px solid var(--rule);font-size:12.5px;display:flex;gap:10px;align-items:baseline}
+.autolist li:last-child{border-bottom:none}
+.autolist .sq{width:9px;height:9px;border-radius:2px;flex:none;position:relative;top:1px}
+.autolist .m{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--ink3);flex:none}
+.autolist .none{color:var(--ink3);font-style:italic}
+.kread{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:1px;background:var(--rule);border:1px solid var(--rule);border-radius:7px;overflow:hidden}
+.kread div{background:#fff;padding:11px 13px}
+.kread .k{font-size:9.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--ink3);font-weight:600;margin-bottom:4px}
+.kread .v{font-family:var(--mono);font-size:18px;font-weight:600}
+.kread .s{font-size:10.5px;color:var(--ink3);margin-top:2px}
+
+/* photo picker */
+.drop{border:1px dashed var(--rule2);border-radius:7px;padding:16px;text-align:center;color:var(--ink3);font-size:12px;cursor:pointer}
+.drop:hover{border-color:var(--accent);color:var(--ink2)}
+.thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:8px;margin-top:9px}
+.thumbs .t{position:relative;border:1px solid var(--rule);border-radius:5px;overflow:hidden;background:var(--panel)}
+.thumbs .t img{width:100%;height:64px;object-fit:cover;display:block}
+.thumbs .t input{width:100%;border:none;border-top:1px solid var(--rule);font-size:10px;padding:3px 5px;background:#fff}
+.thumbs .t .x{position:absolute;right:3px;top:3px;width:17px;height:17px;border-radius:50%;
+  background:rgba(28,25,23,.75);color:#fff;font-size:11px;line-height:17px;text-align:center}
+
+@media print{
+  header,.shell,#pgSnapshots,#pgBuilder,.rep-bar,.readout,.scrim,.homebtn{display:none!important}
+  body,html{overflow:visible;height:auto;background:#fff}
+  #pgReport{display:block!important;height:auto;overflow:visible}
+  .rep{max-width:none;padding:0}
+  .rep-bd{padding:0}
+  .rep h3{break-after:avoid}
+  .gal figure,.rchart,.kpis{break-inside:avoid}
+}
+
+@media (max-width:900px){
+  aside{position:fixed;left:0;top:51px;bottom:0;z-index:30;transform:translateX(-100%);transition:transform .2s;box-shadow:2px 0 16px rgba(28,25,23,.12)}
+  aside.open{transform:none}
+  .shell{display:block}
+  main{height:100%}
+  #railBtn{display:inline-flex!important}
+  .homebtn .ht{display:none}
+  .homebtn{padding:6px 10px}
+}
+#railBtn{display:none}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<header>
+  <button class="btn homebtn" id="backHome" title="Back to Horizons home">
+    <span class="hi">⌂</span><span class="ht">Home</span></button>
+  <button id="railBtn" class="btn" style="padding:6px 11px">Layers</button>
+  <button class="brand" id="homeBtn" title="Back to Horizons home"><b>Horizons</b><span id="crumb">DFA</span></button>
+
+  <div class="fld"><label>Store</label>
+    <select id="store">
+      <option value="LAX">LAX TBIT</option>
+      <option value="SFOA">SFO Terminal A</option>
+      <option value="SFOG">SFO Terminal G</option>
+    </select>
+  </div>
+
+  <div class="fld"><label>From</label><input type="date" id="from" value="2026-06-14">
+    <label>To</label><input type="date" id="to" value="2026-07-18"></div>
+
+  <div class="fld"><label>View</label>
+    <div class="seg" id="mode">
+      <button data-v="stack" aria-pressed="true">Stacked</button>
+      <button data-v="combo">Combined</button>
+    </div>
+  </div>
+
+  <div class="fld"><label>Sales</label>
+    <div class="seg" id="sv">
+      <button data-v="actual" aria-pressed="true">Actual $</button>
+      <button data-v="adj">Adjusted $</button>
+      <button data-v="market">vs Market</button>
+    </div>
+    <button class="btn" id="modelBtn" style="padding:6px 9px" title="Tune the adjustment model">⚙</button>
+  </div>
+
+  <div class="fld"><label>Compare</label>
+    <div class="seg" id="cmp">
+      <button data-v="off" aria-pressed="true">Off</button>
+      <button data-v="date">Same date</button>
+      <button data-v="wday">Same weekday</button>
+    </div>
+  </div>
+
+  <div class="spacer"></div>
+  <div class="mini" id="stamp"></div>
+</header>
+
+<div class="shell" id="pgTimeline">
+  <aside id="rail">
+    <div class="rail-h">Layers</div>
+    <div id="layers"></div>
+
+    <div class="rail-h">Flights <span id="fpCount"></span></div>
+    <div class="fpick">
+      <input type="text" id="fq" placeholder="Search airline, code or flight">
+      <div class="fp-quick">
+        <button data-fsel="all">All</button><button data-fsel="none">None</button>
+        <button data-fsel="AM">AM</button><button data-fsel="Mid">Mid</button>
+        <button data-fsel="PM">PM</button><button data-fsel="Late">Late</button>
+      </div>
+    </div>
+    <div id="fpTree"></div>
+
+    <div class="rail-h">Add to timeline</div>
+    <div class="rail-act">
+      <button data-add="note">＋ Day note (staff comment)</button>
+      <button data-add="move">＋ Flight move / cancellation</button>
+      <button data-add="promo">＋ Active promo</button>
+      <button data-add="camp">＋ Campaign or activation</button>
+      <button id="exportBtn">⇪ Copy rows for spreadsheet</button>
+    </div>
+
+    <div class="rail-h">Data sources</div>
+    <div class="note-src">
+      <b>Flight loads</b> — real, from Load_Projections Jun 28–Jul 4 (TBIT AM+PM, flight level). All other dates modelled.<br><br>
+      <b>Sales</b> — placeholder. Wires to Sales/LAX_YYYY-MM-full.xlsx.<br><br>
+      <b>Currency</b> — placeholder. Pull from Frankfurter, cache to FX/rates.json.<br><br>
+      <b>Notes, moves, promos</b> — entered here, held on this device until the DFA network build.
+    </div>
+  </aside>
+
+  <main id="main">
+    <div class="board" id="board"></div>
+    <div id="scrub"></div>
+  </main>
+</div>
+
+<div id="pgHome" class="page"></div>
+<div id="pgSnapshots" class="page"></div>
+<div id="pgBuilder" class="page"></div>
+<div id="pgReport" class="page"></div>
+
+<div class="readout" id="readout"></div>
+<div class="scrim" id="scrim"><div class="modal" id="modal"></div></div>
+
+<script>
+"use strict";
+
+/* ============================================================
+   1. REFERENCE DATA
+   ============================================================ */
+/* Flight-level roster from Load_Projections Jun 28 - Jul 4 (TBIT AM+PM).
+   p[] is pax by weekday, index 0 = Sunday, matching the sheet's own columns.
+   A zero means the flight doesn't operate that weekday. */
+const FLIGHTS = [{"a":"China","c":"CI","f":"7","t":"00:05:00","b":"AM","r":"Greater China","p":[0,259,247,308,330,311,307]},{"a":"Air France","c":"AF","f":"18","t":"00:10:00","b":"AM","r":"Europe","p":[258,0,299,0,0,0,0]},{"a":"Eva","c":"BR","f":"11","t":"00:15:00","b":"AM","r":"Greater China","p":[204,227,197,250,270,248,240]},{"a":"Avianca","c":"AV","f":"529","t":"00:15:00","b":"AM","r":"Latin America","p":[155,163,137,132,135,118,102]},{"a":"Cathay","c":"CX","f":"883","t":"00:25:00","b":"AM","r":"Greater China","p":[309,306,362,361,357,349,329]},{"a":"Volaris","c":"Y4","f":"7781","t":"00:30:00","b":"AM","r":"Latin America","p":[139,137,119,0,90,128,89]},{"a":"Starlux","c":"JX","f":"1","t":"00:35:00","b":"AM","r":"Greater China","p":[182,224,223,231,275,267,260]},{"a":"Volaris","c":"Y4","f":"711","t":"00:37:00","b":"AM","r":"Latin America","p":[200,214,213,214,182,140,147]},{"a":"Volaris","c":"Y4","f":"1721","t":"00:46:00","b":"AM","r":"Latin America","p":[152,139,142,177,149,154,116]},{"a":"Air France","c":"AF","f":"26/28","t":"00:50:00","b":"AM","r":"Europe","p":[0,274,0,252,252,262,243]},{"a":"Volaris","c":"Y4","f":"5641","t":"00:50:00","b":"AM","r":"Latin America","p":[0,0,0,0,0,0,88]},{"a":"Eva","c":"BR","f":"15","t":"00:50:00","b":"AM","r":"Greater China","p":[204,239,200,221,264,249,224]},{"a":"Volaris","c":"Y4","f":"7721","t":"00:50:00","b":"AM","r":"Latin America","p":[0,0,0,105,0,85,0]},{"a":"Volaris","c":"Y4","f":"7897","t":"00:54:00","b":"AM","r":"Latin America","p":[77,0,0,0,119,0,0]},{"a":"Volaris","c":"Y4","f":"7897","t":"00:54:00","b":"AM","r":"Latin America","p":[101,0,91,0,102,0,0]},{"a":"Volaris","c":"Y4","f":"5660","t":"00:54:00","b":"AM","r":"Latin America","p":[0,0,0,0,131,0,121]},{"a":"Volaris","c":"Y4","f":"5723","t":"00:56:00","b":"AM","r":"Latin America","p":[0,0,0,0,0,91,138]},{"a":"Volaris","c":"Y4","f":"7841","t":"01:00:00","b":"AM","r":"Latin America","p":[128,141,0,145,0,107,0]},{"a":"Avianca","c":"AV","f":"521","t":"01:00:00","b":"AM","r":"Latin America","p":[137,154,125,108,113,106,87]},{"a":"Ana","c":"NH","f":"105","t":"01:20:00","b":"AM","r":"Japan","p":[164,160,156,155,141,144,160]},{"a":"Cathay","c":"CX","f":"881","t":"01:25:00","b":"AM","r":"Greater China","p":[239,234,278,274,260,251,240]},{"a":"Volaris","c":"Y4","f":"7879","t":"01:35:00","b":"AM","r":"Latin America","p":[112,0,0,0,123,0,0]},{"a":"Copa","c":"CM","f":"473","t":"02:02:00","b":"AM","r":"Latin America","p":[154,158,153,132,142,101,136]},{"a":"Copa","c":"CM","f":"306","t":"02:03:00","b":"AM","r":"Latin America","p":[153,156,154,0,140,0,149]},{"a":"Avianca","c":"AV","f":"557","t":"0725","b":"AM","r":"Latin America","p":[138,0,0,136,0,137,0]},{"a":"Volaris","c":"Q6","f":"4063","t":"0900","b":"AM","r":"Latin America","p":[152,155,141,127,141,116,117]},{"a":"Korean","c":"KE","f":"8016","t":"1000","b":"AM","r":"Korea","p":[0,331,0,0,0,0,0]},{"a":"Asiana","c":"OZ","f":"201","t":"1000","b":"AM","r":"Korea","p":[277,254,282,478,485,468,459]},{"a":"Royal Air Morac","c":"AT","f":"251","t":"1000","b":"AM","r":"Middle East","p":[212,0,221,0,0,190,0]},{"a":"Zip Air","c":"ZG","f":"23","t":"1025","b":"AM","r":"Japan","p":[290,290,290,290,290,290,290]},{"a":"Volaris","c":"Y4","f":"7855","t":"1034","b":"AM","r":"Latin America","p":[119,0,126,0,115,0,122]},{"a":"Volaris","c":"Y4","f":"7965","t":"1047","b":"AM","r":"Latin America","p":[0,66,0,76,0,71,0]},{"a":"Air Premia","c":"YP","f":"102","t":"1050","b":"AM","r":"Korea","p":[250,0,236,229,203,215,218]},{"a":"Flair Airlines","c":"F8","f":"1889","t":"1130","b":"AM","r":"Other","p":[0,188,0,0,0,191,0]},{"a":"Eva","c":"BR","f":"5","t":"1150","b":"AM","r":"Greater China","p":[159,226,166,179,261,216,220]},{"a":"Volaris","c":"Y4","f":"1713","t":"1155","b":"AM","r":"Latin America","p":[205,186,190,127,139,137,121]},{"a":"Volaris","c":"Y4","f":"7723","t":"1211","b":"AM","r":"Latin America","p":[0,134,0,0,0,83,0]},{"a":"Copa","c":"CM","f":"402","t":"1217","b":"AM","r":"Latin America","p":[0,0,163,0,157,0,145]},{"a":"Cathay","c":"CX","f":"885","t":"1225","b":"AM","r":"Greater China","p":[288,284,296,342,332,300,251]},{"a":"Philippines","c":"PR","f":"113","t":"1225","b":"AM","r":"SE Asia","p":[286,250,275,241,285,178,297]},{"a":"Korean","c":"KE","f":"18","t":"1230","b":"AM","r":"Korea","p":[249,309,312,348,325,334,308]},{"a":"China Eastern","c":"MU","f":"586","t":"1230","b":"AM","r":"Greater China","p":[306,301,294,279,284,281,272]},{"a":"Ana","c":"NH","f":"5","t":"1245","b":"AM","r":"Japan","p":[194,192,188,184,188,179,188]},{"a":"Turkish","c":"TK","f":"180","t":"1325","b":"AM","r":"Europe","p":[288,292,235,287,279,266,250]},{"a":"Tahiti Nui","c":"TN","f":"8","t":"1330","b":"AM","r":"Oceania","p":[265,248,259,259,262,273,223]},{"a":"Avianca","c":"AV","f":"523","t":"1350","b":"AM","r":"Latin America","p":[0,119,197,110,139,151,154]},{"a":"Klm","c":"KL","f":"602","t":"1350","b":"AM","r":"Europe","p":[271,298,287,264,281,231,172]},{"a":"El Al","c":"LY","f":"6","t":"1400","b":"Mid","r":"Middle East","p":[270,269,269,267,272,0,0]},{"a":"Air France","c":"AF","f":"21","t":"1400","b":"Mid","r":"Europe","p":[263,257,257,272,251,246,218]},{"a":"Air China","c":"CA","f":"988","t":"1420","b":"Mid","r":"Greater China","p":[300,0,0,0,0,0,0]},{"a":"Singapore","c":"SQ","f":"11","t":"1420","b":"Mid","r":"SE Asia","p":[258,254,253,254,249,244,249]},{"a":"Volaris","c":"Y4","f":"7849","t":"1431","b":"Mid","r":"Latin America","p":[139,137,0,0,0,124,0]},{"a":"Avianca","c":"AV","f":"641","t":"1440","b":"Mid","r":"Latin America","p":[147,174,170,145,136,132,133]},{"a":"Volaris","c":"Y4","f":"1715","t":"1505","b":"Mid","r":"Latin America","p":[183,175,154,158,150,163,101]},{"a":"Avianca","c":"AV","f":"525","t":"1505","b":"Mid","r":"Latin America","p":[146,130,0,113,0,0,0]},{"a":"Austrian Air","c":"OS","f":"52","t":"1505","b":"Mid","r":"Europe","p":[306,291,320,304,281,256,270]},{"a":"Air France","c":"AF","f":"23","t":"1515","b":"Mid","r":"Europe","p":[255,250,269,257,255,246,222]},{"a":"Ita Airways","c":"AZ","f":"621","t":"1515","b":"Mid","r":"Europe","p":[254,230,248,306,282,262,208]},{"a":"Zip Air","c":"ZG","f":"33","t":"1525","b":"Mid","r":"Japan","p":[0,290,0,0,290,0,290]},{"a":"Volaris","c":"Y4","f":"1782","t":"1550","b":"Mid","r":"Latin America","p":[112,94,0,97,0,53,0]},{"a":"Lufthansa","c":"LH","f":"457","t":"1600","b":"Mid","r":"Europe","p":[283,298,316,321,287,273,231]},{"a":"Qatar","c":"QR","f":"740","t":"1620","b":"Mid","r":"Middle East","p":[287,282,283,313,300,299,276]},{"a":"Tahiti Nui","c":"TN","f":"7","t":"1620","b":"Mid","r":"Oceania","p":[259,236,255,269,283,259,248]},{"a":"Lot Polish","c":"LO","f":"22","t":"1635","b":"Mid","r":"Europe","p":[0,179,0,230,0,189,237]},{"a":"Emirates","c":"EK","f":"216","t":"1640","b":"Mid","r":"Middle East","p":[284,284,282,308,257,204,213]},{"a":"Klm","c":"KL","f":"604","t":"1645","b":"Mid","r":"Europe","p":[272,277,274,265,272,159,147]},{"a":"Tap Portugal","c":"TP","f":"248","t":"1645","b":"Mid","r":"Europe","p":[278,0,279,0,0,261,229]},{"a":"Philippines","c":"PR","f":"123","t":"1655","b":"Mid","r":"SE Asia","p":[254,205,0,219,0,175,0]},{"a":"Ana","c":"NH","f":"125","t":"1715","b":"Mid","r":"Japan","p":[199,191,165,184,188,176,171]},{"a":"Egypt Air","c":"MS","f":"984","t":"1725","b":"Mid","r":"Middle East","p":[0,333,0,0,325,0,319]},{"a":"Lufthansa","c":"LH","f":"453","t":"1730","b":"Mid","r":"Europe","p":[448,458,443,433,405,368,361]},{"a":"Iberia","c":"IB","f":"352","t":"1750","b":"Mid","r":"Europe","p":[253,200,274,236,212,193,209]},{"a":"Air France","c":"AF","f":"25","t":"1825","b":"PM","r":"Europe","p":[269,267,254,275,255,241,240]},{"a":"Lufthansa","c":"LH","f":"451","t":"1840","b":"PM","r":"Europe","p":[249,244,263,0,225,198,184]},{"a":"Condor","c":"DE","f":"2081","t":"1845","b":"PM","r":"Europe","p":[238,284,277,241,239,239,281]},{"a":"Finnair","c":"AY","f":"2","t":"1850","b":"PM","r":"Europe","p":[0,241,0,274,192,138,0]},{"a":"Scandanavian","c":"SK","f":"932","t":"1910","b":"PM","r":"Europe","p":[205,242,219,257,247,244,221]},{"a":"Volaris","c":"Y4","f":"713","t":"1917","b":"PM","r":"Latin America","p":[133,141,133,115,135,117,109]},{"a":"Swiss","c":"LX","f":"41","t":"1935","b":"PM","r":"Europe","p":[238,202,250,264,264,281,196]},{"a":"French Bee","c":"BF","f":"731","t":"1945","b":"PM","r":"Europe","p":[366,0,0,372,0,345,0]},{"a":"Volaris","c":"Y4","f":"1717","t":"1952","b":"PM","r":"Latin America","p":[140,147,114,123,135,118,98]},{"a":"El Al","c":"LY","f":"106","t":"2000","b":"PM","r":"Middle East","p":[266,0,0,267,0,0,0]},{"a":"Aer Lingus","c":"EI","f":"68","t":"2010","b":"PM","r":"Europe","p":[210,166,241,217,176,141,138]},{"a":"Turkish","c":"TK","f":"10","t":"2010","b":"PM","r":"Europe","p":[328,335,330,329,331,323,280]},{"a":"Singapore","c":"SQ","f":"35","t":"2055","b":"PM","r":"SE Asia","p":[237,0,0,241,0,234,0]},{"a":"Iberia","c":"IB","f":"2624","t":"2055","b":"PM","r":"Europe","p":[0,248,0,0,249,227,211]},{"a":"Saudia","c":"SV","f":"42","t":"2100","b":"PM","r":"Middle East","p":[0,165,0,0,207,0,219]},{"a":"Air New Zealand","c":"NZ","f":"3","t":"2110","b":"PM","r":"Oceania","p":[0,0,174,0,0,154,0]},{"a":"Qantas","c":"QF","f":"94","t":"2150","b":"PM","r":"Oceania","p":[208,205,196,203,401,199,362]},{"a":"Air China","c":"CA","f":"770","t":"2155","b":"PM","r":"Greater China","p":[0,0,300,0,0,0,0]},{"a":"Air France","c":"AF","f":"27/29","t":"2205","b":"PM","r":"Europe","p":[228,230,0,228,0,247,250]},{"a":"Lot Polish","c":"LO","f":"24","t":"2205","b":"PM","r":"Europe","p":[268,0,279,0,265,0,0]},{"a":"Qantas","c":"QF","f":"16","t":"2210","b":"PM","r":"Oceania","p":[203,202,191,204,190,199,197]},{"a":"Air New Zealand","c":"NZ","f":"5","t":"2210","b":"PM","r":"Oceania","p":[309,258,210,206,215,116,151]},{"a":"Copa","c":"CM","f":"362","t":"2213","b":"PM","r":"Latin America","p":[155,167,166,154,171,140,134]},{"a":"Xiamen","c":"MF","f":"830","t":"2245","b":"PM","r":"Greater China","p":[275,0,275,0,275,0,0]},{"a":"Air China","c":"CA","f":"818","t":"2300","b":"PM","r":"Greater China","p":[0,0,300,0,0,0,300]},{"a":"Tahiti Nui","c":"TN","f":"101/111/501","t":"2300","b":"PM","r":"Oceania","p":[223,0,246,0,256,234,156]},{"a":"Sichuan","c":"3U","f":"3838","t":"2315","b":"PM","r":"Greater China","p":[233,0,246,0,0,238,0]},{"a":"Singapore","c":"SQ","f":"37","t":"2320","b":"PM","r":"SE Asia","p":[249,246,242,237,238,243,233]},{"a":"Air China","c":"CA","f":"984","t":"2325","b":"PM","r":"Greater China","p":[300,300,300,0,300,300,0]},{"a":"Qantas","c":"QF","f":"12","t":"2330","b":"PM","r":"Oceania","p":[406,386,383,397,373,372,343]},{"a":"Asiana","c":"OZ","f":"203","t":"2330","b":"PM","r":"Korea","p":[430,432,418,290,285,281,283]},{"a":"Air Premia","c":"YP","f":"104","t":"2330","b":"PM","r":"Korea","p":[0,272,0,241,0,240,0]},{"a":"El Al","c":"LY","f":"106","t":"2345","b":"PM","r":"Middle East","p":[0,0,0,0,0,0,278]},{"a":"China Southern","c":"CZ","f":"328","t":"2350","b":"PM","r":"Greater China","p":[350,350,0,350,0,350,350]},{"a":"Korean Air","c":"KE","f":"12","t":"2350","b":"PM","r":"Korea","p":[327,354,359,330,368,312,346]},{"a":"Volaris","c":"N3","f":"4309","t":"2354","b":"PM","r":"Latin America","p":[142,141,131,138,135,126,121]},{"a":"Philippines","c":"PR","f":"103","t":"2355","b":"PM","r":"SE Asia","p":[278,258,272,252,253,181,300]},{"a":"Fiji Airways","c":"FJ","f":"811","t":"2355","b":"PM","r":"Oceania","p":[330,336,298,296,280,261,207]}];
+FLIGHTS.forEach(f=>{ f.k=f.c+"|"+f.f; f.avg=f.p.filter(v=>v>0).reduce((a,b)=>a+b,0)/Math.max(1,f.p.filter(v=>v>0).length); });
+const FLIGHT_BY_KEY = Object.fromEntries(FLIGHTS.map(f=>[f.k,f]));
+const REGIONS = [...new Set(FLIGHTS.map(f=>f.r))]
+  .sort((a,b)=>FLIGHTS.filter(f=>f.r===b).reduce((s,f)=>s+f.avg,0)-FLIGHTS.filter(f=>f.r===a).reduce((s,f)=>s+f.avg,0));
+const REGION_COL = {
+  "Europe":"#7C5CBF","Greater China":"#C0392B","Latin America":"#C4761F","Oceania":"#2E7D9A",
+  "Korea":"#1D9E75","SE Asia":"#8C6D3F","Middle East":"#6B7280","Japan":"#2F6FD0","Other":"#A8A29E"
+};
+const REAL_WEEK_START = "2026-06-28";
+const REAL_WEEK = new Set(["2026-06-28","2026-06-29","2026-06-30","2026-07-01","2026-07-02","2026-07-03","2026-07-04"]);
+
+// Pax on one flight on one date. Real inside the projection week, modelled
+// outside it but still on that flight's own operating pattern.
+function flightPax(f, date){
+  const base = f.p[dow(date)];
+  if(!base) return 0;
+  if(REAL_WEEK.has(date)) return base;
+  const d = parse(date), doy = Math.floor((d-Date.UTC(d.getUTCFullYear(),0,1))/DAY);
+  const season = 1 + 0.11*Math.sin((doy-100)/365*2*Math.PI);
+  seedAt("P"+date+f.k);
+  return Math.round(base*season*(0.94+rnd()*0.12));
+}
+
+const HOLIDAYS = {
+  "2025-01-01":["New Year's Day","US"], "2025-01-20":["MLK Day","US"],
+  "2025-01-29":["Lunar New Year","CN"], "2025-01-30":["LNY holiday","CN"],
+  "2025-01-31":["LNY holiday","CN"], "2025-02-17":["Presidents Day","US"],
+  "2025-04-29":["Golden Week","JP"], "2025-04-30":["Golden Week","JP"],
+  "2025-05-01":["Golden Week","JP"], "2025-05-02":["Golden Week","JP"],
+  "2025-05-03":["Golden Week","JP"], "2025-05-04":["Golden Week","JP"],
+  "2025-05-05":["Golden Week","JP"], "2025-05-26":["Memorial Day","US"],
+  "2025-06-19":["Juneteenth","US"], "2025-07-04":["Independence Day","US"],
+  "2025-08-13":["Obon","JP"], "2025-08-14":["Obon","JP"], "2025-08-15":["Obon","JP"],
+  "2025-09-01":["Labor Day","US"], "2025-10-01":["Golden Week","CN"],
+  "2025-10-02":["Golden Week","CN"], "2025-10-03":["Golden Week","CN"],
+  "2025-10-04":["Golden Week","CN"], "2025-10-05":["Chuseok","KR"],
+  "2025-10-06":["Chuseok","KR"], "2025-10-07":["Chuseok","KR"],
+  "2025-11-27":["Thanksgiving","US"], "2025-11-28":["Black Friday","US"],
+  "2025-12-25":["Christmas","US"],
+
+  "2026-01-01":["New Year's Day","US"], "2026-01-19":["MLK Day","US"],
+  "2026-02-16":["Presidents Day","US"], "2026-02-17":["Lunar New Year","CN"],
+  "2026-02-18":["LNY holiday","CN"], "2026-02-19":["LNY holiday","CN"],
+  "2026-04-29":["Golden Week","JP"], "2026-04-30":["Golden Week","JP"],
+  "2026-05-01":["Golden Week","JP"], "2026-05-02":["Golden Week","JP"],
+  "2026-05-03":["Golden Week","JP"], "2026-05-04":["Golden Week","JP"],
+  "2026-05-05":["Golden Week","JP"], "2026-05-25":["Memorial Day","US"],
+  "2026-06-19":["Juneteenth","US"], "2026-07-04":["Independence Day","US"],
+  "2026-08-13":["Obon","JP"], "2026-08-14":["Obon","JP"], "2026-08-15":["Obon","JP"],
+  "2026-09-07":["Labor Day","US"], "2026-09-24":["Chuseok","KR"],
+  "2026-09-25":["Chuseok","KR"], "2026-09-26":["Chuseok","KR"],
+  "2026-10-01":["Golden Week","CN"], "2026-10-02":["Golden Week","CN"],
+  "2026-10-03":["Golden Week","CN"], "2026-10-04":["Golden Week","CN"],
+  "2026-11-26":["Thanksgiving","US"], "2026-11-27":["Black Friday","US"],
+  "2026-12-25":["Christmas","US"]
+};
+/* Named trading windows. These are the periods people actually talk about
+   — "how did Lunar New Year go" — so they get to be first-class objects
+   rather than something you reconstruct from two date pickers each time. */
+const PERIODS = [
+  {id:"lny26", name:"Lunar New Year 2026", mkt:"CN", from:"2026-02-10", to:"2026-02-26"},
+  {id:"lny25", name:"Lunar New Year 2025", mkt:"CN", from:"2025-01-22", to:"2025-02-07"},
+  {id:"gwjp26",name:"Golden Week Japan 2026", mkt:"JP", from:"2026-04-25", to:"2026-05-09"},
+  {id:"gwcn25",name:"Golden Week China 2025", mkt:"CN", from:"2025-09-28", to:"2025-10-08"},
+  {id:"chu25", name:"Chuseok 2025", mkt:"KR", from:"2025-10-02", to:"2025-10-10"},
+  {id:"jul426",name:"July 4 2026", mkt:"US", from:"2026-06-27", to:"2026-07-07"},
+  {id:"jul425",name:"July 4 2025", mkt:"US", from:"2025-06-28", to:"2025-07-08"},
+  {id:"obon26",name:"Obon 2026", mkt:"JP", from:"2026-08-08", to:"2026-08-19"},
+  {id:"summer26",name:"Summer peak 2026", mkt:"US", from:"2026-06-14", to:"2026-08-31"},
+  {id:"hol25", name:"Holiday 2025", mkt:"US", from:"2025-11-20", to:"2025-12-31"}
+];
+const MKT_COLOR = {US:"#8C6D3F", CN:"#C0392B", JP:"#2E7D9A", KR:"#1D9E75"};
+
+/* ============================================================
+   2. DATE HELPERS
+   ============================================================ */
+const DAY = 864e5;
+const iso = d => d.toISOString().slice(0,10);
+const parse = s => new Date(s+"T12:00:00Z");
+const addD = (s,n) => iso(new Date(parse(s).getTime()+n*DAY));
+const dow = s => parse(s).getUTCDay();
+const DOW_L = ["S","M","T","W","T","F","S"];
+const DOW_N = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+const MON  = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const isWknd = s => dow(s)===0 || dow(s)===6;
+const fmtD = s => { const d=parse(s); return MON[d.getUTCMonth()]+" "+d.getUTCDate(); };
+const money = n => "$"+Math.round(n).toLocaleString();
+const kk = n => n>=1000 ? (n/1000).toFixed(1)+"k" : String(Math.round(n));
+const priorDate = (s,mode) =>
+  mode==="wday" ? addD(s,-364)
+: mode==="date" ? (function(){const d=parse(s);return (d.getUTCFullYear()-1)+s.slice(4);})()
+: null;
+const esc = s => String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+/* ============================================================
+   3. MODELLED SERIES
+   ============================================================ */
+let rngState = 20260628;
+function rnd(){ rngState=(rngState*1103515245+12345)&0x7fffffff; return rngState/0x7fffffff; }
+function seedAt(s){ rngState=0; for(let i=0;i<s.length;i++) rngState=(rngState*31+s.charCodeAt(i))&0x7fffffff; rngState|=1; rnd(); }
+
+const STORE_SCALE = {LAX:1, SFOA:0.62, SFOG:0.41};
+
+function baseLoad(date){          // full terminal — the model always uses this
+  let t=0; for(const f of FLIGHTS) t+=flightPax(f,date);
+  return t;
+}
+function selLoad(date){           // only the flights picked in the rail
+  let t=0; for(const f of FLIGHTS) if(SEL.has(f.k)) t+=flightPax(f,date);
+  return t;
+}
+function regionSplit(date, selectedOnly){
+  const out={};
+  for(const f of FLIGHTS){
+    if(selectedOnly && !SEL.has(f.k)) continue;
+    const v=flightPax(f,date); if(v) out[f.r]=(out[f.r]||0)+v;
+  }
+  return out;
+}
+function operatingFlights(date, selectedOnly){
+  return FLIGHTS.filter(f=>(!selectedOnly||SEL.has(f.k)) && flightPax(f,date)>0);
+}
+function baseSales(date, store){
+  const load = baseLoad(date);
+  seedAt("S"+date+store);
+  const spendPerPax = 3.05 + 0.30*Math.sin(parse(date).getUTCDate()/31*2*Math.PI);
+  const wk = [1.09,0.94,0.92,0.95,1.01,1.07,1.12][dow(date)];
+  const h = HOLIDAYS[date];
+  const hol = h ? (h[1]==="CN"||h[1]==="KR" ? 1.26 : h[1]==="JP" ? 1.18 : 1.09) : 1;
+  return Math.round(load*spendPerPax*wk*hol*STORE_SCALE[store]*(0.94+rnd()*0.12));
+}
+const FX_CCY = [
+  {c:"JPY", n:"Japanese yen", col:"#2E7D9A", base:152,  amp:9,     ph:0.4},
+  {c:"KRW", n:"Korean won",   col:"#1D9E75", base:1355, amp:62,    ph:1.9},
+  {c:"CNY", n:"Chinese yuan", col:"#C0392B", base:7.18, amp:0.16,  ph:3.1},
+  {c:"EUR", n:"Euro",         col:"#7C5CBF", base:0.915,amp:0.028, ph:5.2}
+];
+function fxRate(date, ccy){
+  const t = parse(date).getTime()/DAY;
+  const f = FX_CCY.find(x=>x.c===ccy);
+  seedAt("F"+date+ccy);
+  return f.base + f.amp*Math.sin(t/58+f.ph) + f.amp*0.32*Math.sin(t/13+f.ph*2) + (rnd()-0.5)*f.amp*0.09;
+}
+function fxIndex(date, ccy){
+  const f = FX_CCY.find(x=>x.c===ccy);
+  return 100 * f.base / fxRate(date,ccy);
+}
+
+/* ============================================================
+   3b. NORMALISATION MODEL
+   Sales = pax x capture x basket. Strip out the parts you don't
+   control (how many people, who they were, what their money was
+   worth, what day it was) and what's left is what you did.
+   ============================================================ */
+const MODEL = {
+  on:{vol:true, mix:true, fx:true, cal:true},
+  // USD spend per departing pax, by source market. PLACEHOLDERS —
+  // these must be fitted against real sales + load history.
+  coef:{"Greater China":6.20,"Korea":4.10,"Japan":3.90,"Middle East":3.40,
+        "SE Asia":3.20,"Oceania":2.90,"Europe":2.10,"Latin America":1.70},
+  ccy:{"Japan":"JPY","Korea":"KRW","Greater China":"CNY","Europe":"EUR"},
+  elast:0.45,                                    // spend response to a 1% currency move
+  dowF:[1.09,0.94,0.92,0.95,1.01,1.07,1.12],     // Sun..Sat
+  holF:{US:1.09, JP:1.18, CN:1.26, KR:1.26},
+  fitted:false
+};
+const blendedCoef = () => {
+  const c=MODEL.coef, k=Object.keys(c);
+  return k.reduce((a,r)=>a+c[r],0)/k.length;
+};
+function fxAdj(region, date){
+  if(!MODEL.on.fx) return 1;
+  const cc = MODEL.ccy[region];
+  if(!cc) return 1;
+  return 1 + MODEL.elast * (fxIndex(date,cc)/100 - 1);
+}
+let _medPax = null;
+function medianPax(){
+  if(_medPax!==null) return _medPax;
+  const v = DAYS.map(baseLoad).slice().sort((a,b)=>a-b);
+  _medPax = v[Math.floor(v.length/2)] || 18600;
+  return _medPax;
+}
+// What the day *should* have done, given conditions outside our control.
+function expectedSales(date, store){
+  let e = 0;
+  if(MODEL.on.mix){
+    const R = regionSplit(date), tot = baseLoad(date);
+    const scale = MODEL.on.vol ? 1 : medianPax()/tot;
+    for(const r in R) e += R[r]*scale*(MODEL.coef[r]||blendedCoef())*fxAdj(r,date);
+  } else {
+    const pax = MODEL.on.vol ? baseLoad(date) : medianPax();
+    let f = 1;
+    if(MODEL.on.fx){
+      const R = regionSplit(date), tot = baseLoad(date);
+      f = 0; for(const r in R) f += (R[r]/tot)*fxAdj(r,date);
+    }
+    e = pax*blendedCoef()*f;
+  }
+  if(MODEL.on.cal){
+    e *= MODEL.dowF[dow(date)];
+    const hol = HOLIDAYS[date];
+    if(hol) e *= (MODEL.holF[hol[1]]||1);
+  }
+  return e*STORE_SCALE[store];
+}
+// 100 = performed exactly as conditions predicted.
+const perfIndex = (date,store) => {
+  const e = expectedSales(date,store);
+  return e>0 ? baseSales(date,store)/e*100 : 100;
+};
+// Actual sales restated at baseline conditions, so days are comparable.
+function adjustedSales(date, store, normE){
+  const e = expectedSales(date,store);
+  return e>0 ? baseSales(date,store)*(normE/e) : baseSales(date,store);
+}
+const windowMeanExpected = store =>
+  DAYS.reduce((a,d)=>a+expectedSales(d,store),0)/DAYS.length;
+
+/* Iterative proportional fit. Scales each region's coefficient toward the
+   ratio of actual to expected, weighted by that region's share of pax.
+   Stable with few observations, unlike a raw least-squares solve on
+   regressors this collinear. Needs real history to mean anything. */
+function fitModel(){
+  for(let pass=0; pass<24; pass++){
+    const num={}, den={};
+    for(const r in MODEL.coef){ num[r]=0; den[r]=0; }
+    DAYS.forEach(d=>{
+      const act=baseSales(d,S.store), exp=expectedSales(d,S.store);
+      if(exp<=0) return;
+      const R=regionSplit(d), tot=baseLoad(d);
+      for(const r in MODEL.coef){
+        const share=(R[r]||0)/tot;
+        num[r]+=share*act; den[r]+=share*exp;
+      }
+    });
+    for(const r in MODEL.coef){
+      if(den[r]>0){
+        const ratio=num[r]/den[r];
+        MODEL.coef[r]*=1+(ratio-1)*0.5;          // damped step
+        MODEL.coef[r]=Math.max(0.2,Math.min(20,MODEL.coef[r]));
+      }
+    }
+  }
+  MODEL.fitted=true;
+}
+
+/* ============================================================
+   4. EDITABLE LAYERS
+   ============================================================ */
+const SEED = {
+  camp:[
+    {id:"c1",store:"LAX",name:"Summer Travel Retail — Estée Lauder",from:"2026-06-15",to:"2026-07-12",spend:48000,type:"Activation"},
+    {id:"c2",store:"LAX",name:"Digital media takeover — Gate 150 loop",from:"2026-06-22",to:"2026-07-06",spend:22500,type:"Media rental"},
+    {id:"c3",store:"LAX",name:"July 4 Americana window",from:"2026-06-29",to:"2026-07-05",spend:9800,type:"Store owned"},
+    {id:"c4",store:"LAX",name:"Hennessy sampling — weekends",from:"2026-07-03",to:"2026-07-19",spend:16400,type:"Activation"}
+  ],
+  promo:[
+    {id:"p1",store:"LAX",name:"Save $15 on 2 Fragrances",from:"2026-06-14",to:"2026-07-15",cat:"Fragrance"},
+    {id:"p2",store:"LAX",name:"Save 15% Toblerone",from:"2026-06-20",to:"2026-07-31",cat:"Confectionery"},
+    {id:"p3",store:"LAX",name:"Save $20 on Liquor $150+",from:"2026-07-01",to:"2026-07-31",cat:"Liquor"},
+    {id:"p4",store:"LAX",name:"Save 20% Sunglasses",from:"2026-06-28",to:"2026-07-11",cat:"Accessories"}
+  ],
+  move:[
+    {id:"m1",store:"LAX",date:"2026-06-30",flt:"CA 984",kind:"Retimed",detail:"2325 → 0140 next day. Pax cleared security after our close."},
+    {id:"m2",store:"LAX",date:"2026-07-02",flt:"EK 216",kind:"Cancelled",detail:"Equipment. ~257 pax off the floor."},
+    {id:"m3",store:"LAX",date:"2026-07-07",flt:"QF 12",kind:"Gate change",detail:"Moved to 148 — walks past our Gate 130 fixture instead."}
+  ],
+  note:[
+    {id:"n1",store:"LAX",date:"2026-06-29",who:"M. Reyes, GM",tag:"Weather",text:"Soft all afternoon — ground stop upstream, arrivals bunched late and pax went straight to gate."},
+    {id:"n2",store:"LAX",date:"2026-07-01",who:"D. Chan, Sup",tag:"Staffing",text:"Two callouts on the fragrance bar. Held the door but no one working the aisle."},
+    {id:"n3",store:"LAX",date:"2026-07-03",who:"M. Reyes, GM",tag:"Traffic",text:"Best liquor day in weeks. Qantas and Asiana both full and both early."},
+    {id:"n4",store:"LAX",date:"2026-07-04",who:"A. Okafor, GM",tag:"Ops",text:"Holiday Saturday — light business travel, heavy leisure. Basket size up, count down."}
+  ]
+};
+/* Photos are downscaled before they're stored — a phone shot off the floor
+   is 4MB and localStorage gives us about 5MB total. 1100px at q0.72 lands
+   around 120KB, which keeps a season of snapshots inside budget. */
+function shrinkImage(file, maxPx, q){
+  maxPx=maxPx||1100; q=q||0.72;
+  return new Promise((res,rej)=>{
+    const fr=new FileReader();
+    fr.onerror=()=>rej(new Error("read failed"));
+    fr.onload=()=>{
+      const img=new Image();
+      img.onerror=()=>rej(new Error("not an image"));
+      img.onload=()=>{
+        const s=Math.min(1,maxPx/Math.max(img.width,img.height));
+        const c=document.createElement("canvas");
+        c.width=Math.round(img.width*s); c.height=Math.round(img.height*s);
+        const cx=c.getContext("2d");
+        cx.fillStyle="#fff"; cx.fillRect(0,0,c.width,c.height);
+        cx.drawImage(img,0,0,c.width,c.height);
+        res(c.toDataURL("image/jpeg",q));
+      };
+      img.src=fr.result;
+    };
+    fr.readAsDataURL(file);
+  });
+}
+const LS_SNAP = "dfa_timeline_snaps_v1";
+let SNAPS = (function(){ try{ return JSON.parse(localStorage.getItem(LS_SNAP))||[]; }catch(e){ return []; } })();
+function saveSnaps(){
+  try{ localStorage.setItem(LS_SNAP, JSON.stringify(SNAPS)); return true; }
+  catch(e){ alert("Storage is full. Delete an older snapshot, or export this one first — photos are what fill it up."); return false; }
+}
+function storageUsed(){
+  let n=0; try{ for(const k in localStorage) if(localStorage.hasOwnProperty(k)) n+=localStorage[k].length; }catch(e){}
+  return n;
+}
+const LS = "dfa_timeline_v1";
+let DATA = (function(){
+  try{ const s = localStorage.getItem(LS); if(s) return JSON.parse(s); }catch(e){}
+  return JSON.parse(JSON.stringify(SEED));
+})();
+function save(){ try{ localStorage.setItem(LS, JSON.stringify(DATA)); }catch(e){} }
+const uid = p => p + Date.now().toString(36) + Math.floor(Math.random()*999).toString(36);
+
+/* ============================================================
+   5. STATE
+   ============================================================ */
+/* Every label in the app comes from here. A layer is called the same
+   thing in the rail, the panel title, the legend and the hover card. */
+const NAMES = {
+  sales:"Sales",
+  loads:"Flight loads",
+  camp:"Campaigns & activations",
+  promo:"Active promos",
+  move:"Flight moves",
+  note:"Day notes",
+  fx:"Currency strength",
+  market:"Market expectation"
+};
+const LAYERS = [
+  {k:"sales", nm:NAMES.sales, col:"var(--sales)"},
+  {k:"loads", nm:NAMES.loads, col:"var(--loads)"},
+  {k:"camp",  nm:NAMES.camp,  col:"var(--camp)"},
+  {k:"promo", nm:NAMES.promo, col:"var(--promo)"},
+  {k:"move",  nm:NAMES.move,  col:"var(--moves)"},
+  {k:"note",  nm:NAMES.note,  col:"var(--notes)"},
+  {k:"fx",    nm:NAMES.fx,    col:"var(--fx)"}
+];
+const S = {store:"LAX", from:"2026-06-14", to:"2026-07-18", cmp:"off", mode:"stack", sv:"actual", lv:"total", mkt:true, on:{}};
+let SEL = new Set(FLIGHTS.map(f=>f.k));          // all flights on by default
+let EXPANDED = new Set();                         // which region groups are open
+let FQ = "";                                      // flight search text
+const selAllIn = list => list.every(f=>SEL.has(f.k));
+function toggleFlights(list,on){ list.forEach(f=>on?SEL.add(f.k):SEL.delete(f.k)); }
+LAYERS.forEach(l=>S.on[l.k]=true);
+
+let DAYS=[], PW=0, COLW=0;
+const PAD_L=54, PAD_R=52;
+const padR = () => S.sv==="market" ? 74 : PAD_R;
+const xAt = i => PAD_L + i*COLW + COLW/2;
+const xL  = i => PAD_L + i*COLW;
+
+function buildDays(){
+  _medPax=null;
+  DAYS=[]; let d=S.from, guard=0;
+  while(d<=S.to && guard++<500){ DAYS.push(d); d=addD(d,1); }
+  if(DAYS.length<2) DAYS=[S.from];
+}
+const inRange = (o,d) => o.store===S.store && o.from<=d && o.to>=d;
+function spanOf(o){
+  const lo = o.from<DAYS[0]?DAYS[0]:o.from;
+  const hi = o.to>DAYS[DAYS.length-1]?DAYS[DAYS.length-1]:o.to;
+  const a=DAYS.indexOf(lo), b=DAYS.indexOf(hi);
+  return (a<0||b<0||b<a) ? null : [a,b];
+}
+// pack overlapping bands into rows
+function packRows(items){
+  const rows=[];
+  items.forEach(o=>{
+    const sp=spanOf(o); if(!sp) return;
+    let r=rows.findIndex(rw=>rw.every(x=>x.sp[1]<sp[0] || x.sp[0]>sp[1]));
+    if(r<0){ rows.push([]); r=rows.length-1; }
+    rows[r].push({o,sp});
+  });
+  return rows;
+}
+
+/* ============================================================
+   6. SHARED SVG PIECES
+   ============================================================ */
+const board = document.getElementById("board");
+
+function gridRects(H){
+  let s="";
+  DAYS.forEach((d,i)=>{
+    const hol=HOLIDAYS[d];
+    if(hol) s+=`<rect x="${xL(i)}" y="0" width="${COLW}" height="${H}" fill="var(--hol)"/>`;
+    else if(isWknd(d)) s+=`<rect x="${xL(i)}" y="0" width="${COLW}" height="${H}" fill="var(--wknd)"/>`;
+  });
+  return s;
+}
+function yTicks(H, max, fmt, n, side){
+  n=n||3; let s="";
+  for(let i=0;i<=n;i++){
+    const v=max*i/n, y=H-(H-14)*(i/n)-4;
+    s+=`<line class="gl" x1="${PAD_L}" y1="${y}" x2="${PW-padR()}" y2="${y}" opacity="${i?0.55:1}"/>`;
+    if(side==="right") s+=`<text class="axl" x="${PW-padR()+6}" y="${y+3}">${fmt(v)}</text>`;
+    else s+=`<text class="axl" x="${PAD_L-6}" y="${y+3}" text-anchor="end">${fmt(v)}</text>`;
+  }
+  return s;
+}
+function head(title, sub, right, isLegend){
+  return `<div class="p-head"><h3>${title}</h3><span class="sub">${sub||""}</span>`+
+         (isLegend ? `<span class="lg">${right||""}</span>` : `<span class="rt">${right||""}</span>`)+`</div>`;
+}
+const sw = (col,label) => `<i><em style="background:${col}"></em>${label}</i>`;
+/* legend keys — shape matches how the series is actually drawn */
+const kSq  = (c,l,v)=>`<span class="k"><span class="sq" style="background:${c}"></span><b>${l}</b>${v?`<span class="val">${v}</span>`:""}</span>`;
+const kLn  = (c,l,v)=>`<span class="k"><span class="ln" style="border-color:${c}"></span><b>${l}</b>${v?`<span class="val">${v}</span>`:""}</span>`;
+const kDsh = (c,l,v)=>`<span class="k"><span class="dsh" style="border-color:${c}"></span><b>${l}</b>${v?`<span class="val">${v}</span>`:""}</span>`;
+const kTri = (c,l,v)=>`<span class="k"><span class="tri" style="border-bottom-color:${c}"></span><b>${l}</b>${v?`<span class="val">${v}</span>`:""}</span>`;
+const kDot = (c,l,v)=>`<span class="k"><span class="dot" style="background:${c}"></span><b>${l}</b>${v?`<span class="val">${v}</span>`:""}</span>`;
+const legRow = keys => `<div class="p-leg">${keys.filter(Boolean).join("")}</div>`;
+
+/* ============================================================
+   7. RENDER
+   ============================================================ */
+function render(){
+  buildDays();
+  PW = Math.max(board.clientWidth || 900, 560);
+  COLW = (PW - PAD_L - padR()) / DAYS.length;
+
+  let h = dayRuler();
+  h += S.mode==="combo" ? panelCombined() : panelsStacked();
+  h += panelSpine();
+  board.innerHTML = h;
+  document.getElementById("stamp").textContent =
+    DAYS.length + " days · " + fmtD(S.from) + " – " + fmtD(S.to) + " · " + S.store;
+  renderRail();
+}
+
+function panelsStacked(){
+  let h="";
+  if(S.on.sales) h += panelSales();
+  if(S.on.loads) h += panelLoads();
+  if(S.on.camp)  h += panelBands("camp",NAMES.camp,"var(--camp)");
+  if(S.on.promo) h += panelBands("promo",NAMES.promo,"var(--promo)");
+  if(S.on.move)  h += panelMoves();
+  if(S.on.note)  h += panelNotes();
+  if(S.on.fx)    h += panelFX();   // currency sits last, above the spine
+  return h;
+}
+
+/* -- sales ------------------------------------------------- */
+/* -----------------------------------------------------------
+   vs Market — the outperformance wedge.
+   Market line = what conditions alone say this period should have
+   done against last year. Our line = what it actually did. The gap
+   between them is the argument.
+   ----------------------------------------------------------- */
+function panelVsMarket(){
+  const H=196;
+  const cmp = S.cmp==="off" ? "wday" : S.cmp;
+
+  /* cumulative, so both lines converge on the period total */
+  let cE=0,cEp=0,cA=0,cAp=0;
+  const mkt=[], ours=[];
+  DAYS.forEach(d=>{
+    const p=priorDate(d,cmp);
+    cE+=expectedSales(d,S.store);   cEp+=expectedSales(p,S.store);
+    cA+=baseSales(d,S.store);       cAp+=baseSales(p,S.store);
+    mkt.push(cEp>0?100*cE/cEp:100);
+    ours.push(cAp>0?100*cA/cAp:100);
+  });
+
+  const all=[...mkt,...ours,100];
+  const lo=Math.min(...all), hi=Math.max(...all);
+  const pad=Math.max(2,(hi-lo)*0.28);
+  const y=v=>H-26-(H-46)*((v-(lo-pad))/((hi+pad)-(lo-pad)));
+
+  const mktEnd=mkt[mkt.length-1], ourEnd=ours[ours.length-1];
+  const gap=ourEnd-mktEnd;
+  const gapCol = gap>=0 ? "var(--pos)" : "var(--neg)";
+
+  /* shaded wedge between the two lines */
+  const wedge = `M${xAt(0)},${y(ours[0])}`+
+    ours.map((v,i)=>"L"+xAt(i)+","+y(v)).join("")+
+    mkt.slice().reverse().map((v,i)=>"L"+xAt(DAYS.length-1-i)+","+y(v)).join("")+"Z";
+
+  let g = gridRects(H);
+  /* axis */
+  [hi+pad*0.4,100,lo-pad*0.4].forEach(v=>{
+    g+=`<line class="gl" x1="${PAD_L}" y1="${y(v)}" x2="${PW-padR()}" y2="${y(v)}" opacity="${Math.abs(v-100)<0.01?1:.5}"
+      ${Math.abs(v-100)<0.01?'stroke="var(--rule2)"':""}/>`;
+    g+=`<text class="axl" x="${PAD_L-6}" y="${y(v)+3}" text-anchor="end">${v>100?"+":""}${(v-100).toFixed(0)}%</text>`;
+  });
+  g+=`<path d="${wedge}" fill="${gap>=0?"#1D9E75":"#EF4444"}" opacity=".17"/>`;
+  g+=`<path d="${mkt.map((v,i)=>(i?"L":"M")+xAt(i)+","+y(v)).join("")}" fill="none" stroke="var(--ink3)" stroke-width="1.8" stroke-dasharray="5 3"/>`;
+  g+=`<path d="${ours.map((v,i)=>(i?"L":"M")+xAt(i)+","+y(v)).join("")}" fill="none" stroke="var(--sales)" stroke-width="2.6"/>`;
+
+  /* end labels */
+  const xe=xAt(DAYS.length-1);
+  g+=`<circle cx="${xe}" cy="${y(ourEnd)}" r="3.5" fill="var(--sales)"/>`;
+  g+=`<circle cx="${xe}" cy="${y(mktEnd)}" r="3" fill="var(--ink3)"/>`;
+  g+=`<text x="${xe-8}" y="${y(ourEnd)-8}" text-anchor="end" font-size="11.5" font-weight="700" font-family="var(--body)" fill="var(--sales)">DFA ${ourEnd>=100?"+":""}${(ourEnd-100).toFixed(1)}%</text>`;
+  g+=`<text x="${xe-8}" y="${y(mktEnd)+15}" text-anchor="end" font-size="11.5" font-weight="600" font-family="var(--body)" fill="var(--ink3)">Market ${mktEnd>=100?"+":""}${(mktEnd-100).toFixed(1)}%</text>`;
+
+  /* the wedge callout */
+  const midY=(y(ourEnd)+y(mktEnd))/2;
+  g+=`<line x1="${xe+14}" y1="${y(ourEnd)}" x2="${xe+14}" y2="${y(mktEnd)}" stroke="${gapCol}" stroke-width="1.5"/>`;
+  g+=`<path d="M${xe+11},${y(ourEnd)+ (ourEnd>mktEnd?4:-4)} L${xe+14},${y(ourEnd)} L${xe+17},${y(ourEnd)+(ourEnd>mktEnd?4:-4)}" fill="none" stroke="${gapCol}" stroke-width="1.5"/>`;
+  g+=`<text x="${xe+20}" y="${midY+4}" font-size="12" font-weight="700" font-family="var(--body)" fill="${gapCol}">${gap>=0?"+":""}${gap.toFixed(1)}</text>`;
+  g+=`<text x="${xe+20}" y="${midY+16}" font-size="8.5" font-family="var(--body)" fill="var(--ink3)">pts</text>`;
+
+  const headline = `<span style="color:var(--ink3)">Market ${mktEnd>=100?"+":""}${(mktEnd-100).toFixed(1)}%</span> · <span style="color:var(--sales);font-weight:700">DFA ${ourEnd>=100?"+":""}${(ourEnd-100).toFixed(1)}%</span> · <span style="color:${gapCol};font-weight:700">${gap>=0?"+":""}${gap.toFixed(1)} pts ${gap>=0?"ahead of":"behind"} market</span>`;
+
+  const leg = legRow([
+    kLn("var(--sales)", NAMES.sales, `${ourEnd>=100?"+":""}${(ourEnd-100).toFixed(1)}% YoY`),
+    kDsh("var(--ink3)", NAMES.market, `${mktEnd>=100?"+":""}${(mktEnd-100).toFixed(1)}% YoY`),
+    kSq(gap>=0?"#1D9E75":"#EF4444", gap>=0?"Outperformance":"Shortfall", `${gap>=0?"+":""}${gap.toFixed(1)} pts`)
+  ]);
+  return `<div class="panel">${head("Sales vs market","· cumulative year on year",headline)}
+  ${leg}
+  <svg viewBox="0 0 ${PW} ${H}" height="${H}" preserveAspectRatio="none">${g}</svg>
+  <div class="p-foot">Reads: the market moved ${(mktEnd-100).toFixed(1)}% against ${cmp==="wday"?"the weekday-matched period last year":"the same dates last year"}. We moved ${(ourEnd-100).toFixed(1)}%. The shaded wedge is ${gap>=0?"outperformance":"shortfall"} against conditions.</div>
+  </div>`;
+}
+
+function panelSales(){
+  if(S.sv==="market") return panelVsMarket();
+  const H=170, adj = S.sv!=="actual";
+  const normE = windowMeanExpected(S.store);
+
+  const val = d => S.sv==="adj" ? adjustedSales(d,S.store,normE) : baseSales(d,S.store);
+
+  const cur = DAYS.map(val);
+  const prev = S.cmp==="off" ? null : DAYS.map(d=>{
+    const p = priorDate(d,S.cmp);
+    return S.sv==="adj" ? adjustedSales(p,S.store,normE) : baseSales(p,S.store);
+  });
+
+  let bars="", axis="", ghost="", ref="";
+
+  {
+    const max = Math.max(...cur, ...(prev||[0]))*1.12;
+    const y = v => H-6-(H-20)*(v/max);
+    axis = yTicks(H,max,v=>"$"+kk(v));
+    DAYS.forEach((d,i)=>{
+      const w=Math.max(2,COLW*0.62), x=xAt(i)-w/2;
+      bars+=`<rect x="${x}" y="${y(cur[i])}" width="${w}" height="${H-6-y(cur[i])}"
+        fill="var(--sales)" opacity="${isWknd(d)?1:.68}" rx="1"/>`;
+    });
+    if(S.mkt){
+      /* what conditions alone predicted, on the same dollar axis */
+      const nE = windowMeanExpected(S.store);
+      const exp = DAYS.map(d=>{
+        const e = expectedSales(d,S.store);
+        return S.sv==="adj" ? nE : e;      // adjusted mode flattens expectation by definition
+      });
+      ref += `<path d="${exp.map((v,i)=>(i?"L":"M")+xAt(i)+","+y(v)).join("")}" fill="none"
+        stroke="var(--ink3)" stroke-width="1.6" stroke-dasharray="6 3" opacity=".85"/>`;
+      /* shade the gap: green where we beat conditions, red where we didn't */
+      DAYS.forEach((d,i)=>{
+        const a=cur[i], e=exp[i];
+        if(Math.abs(a-e)<max*0.004) return;
+        const w=Math.max(2,COLW*0.62), x=xAt(i)-w/2;
+        ref += `<rect x="${x}" y="${y(Math.max(a,e))}" width="${w}" height="${Math.abs(y(a)-y(e))}"
+          fill="${a>=e?"#1D9E75":"#EF4444"}" opacity=".22"/>`;
+      });
+    }
+    if(adj){
+      /* ghost the raw actuals behind, so you can see what got stripped out */
+      const raw = DAYS.map(d=>baseSales(d,S.store));
+      ref=`<path d="${raw.map((v,i)=>(i?"L":"M")+xAt(i)+","+y(v)).join("")}" fill="none"
+        stroke="var(--ink3)" stroke-width="1.2" stroke-dasharray="2 3" opacity=".65"/>`;
+    }
+    if(prev) ghost=`<path d="${prev.map((v,i)=>(i?"L":"M")+xAt(i)+","+y(v)).join("")}" fill="none" stroke="var(--ink2)" stroke-width="1.5" stroke-dasharray="4 3" opacity=".8"/>`;
+  }
+
+  /* header numbers */
+  let right, sub, title;
+  if(S.sv==="adj"){
+    const tot=cur.reduce((a,b)=>a+b,0), raw=DAYS.reduce((a,d)=>a+baseSales(d,S.store),0);
+    title = "Sales, adjusted";
+    sub = "· restated at baseline conditions · dotted = actual";
+    right = `${money(tot)} adj vs ${money(raw)} actual`;
+  } else {
+    const tot=cur.reduce((a,b)=>a+b,0), ptot=prev?prev.reduce((a,b)=>a+b,0):0;
+    const dl = prev?(tot-ptot)/ptot*100:0;
+    title = "Sales";
+    sub = prev ? (S.cmp==="wday"?"· dashed = 52 weeks back, weekday matched":"· dashed = same calendar date, prior year") : "· gross, all categories";
+    right = prev ? `${money(tot)} vs ${money(ptot)} · <span style="color:${dl>=0?"var(--pos)":"var(--neg)"}">${dl>=0?"+":""}${dl.toFixed(1)}%</span>` : money(tot)+" total";
+  }
+  let mktBadge="";
+  if(S.mkt){
+    const tA=DAYS.reduce((a,d)=>a+baseSales(d,S.store),0);
+    const tE=DAYS.reduce((a,d)=>a+expectedSales(d,S.store),0);
+    const g=tE>0?(tA-tE)/tE*100:0;
+    mktBadge = `<span style="color:${g>=0?"var(--pos)":"var(--neg)"};font-weight:700">${g>=0?"+":""}${g.toFixed(1)}% vs expected</span> · `;
+  }
+  const flags = adj ? `<span style="color:var(--accent);font-weight:600">adjusted for ${
+    [MODEL.on.vol&&"volume",MODEL.on.mix&&"mix",MODEL.on.fx&&"currency",MODEL.on.cal&&"calendar"].filter(Boolean).join(", ")||"nothing"
+  }</span> · ` : "";
+
+  const toggle =
+    `<div class="p-sub"><button class="mktbtn ${S.mkt?"on":""}" id="mktBtn">
+       <span class="dash"></span>${S.mkt?"Market expectation on":"Show market expectation"}</button></div>`;
+  const legend = legRow([
+    kSq("var(--sales)", S.sv==="adj"?NAMES.sales+" (adjusted)":NAMES.sales),
+    S.mkt ? kDsh("var(--ink3)", NAMES.market, "what conditions predicted") : "",
+    S.mkt ? kSq("#1D9E75","Ahead of market") : "",
+    S.mkt ? kSq("#EF4444","Behind market") : "",
+    prev ? kDsh("var(--ink2)", S.cmp==="wday"?"Same weekday last year":"Same date last year") : "",
+    adj ? kDsh("var(--ink3)","Actual, before adjustment") : ""
+  ]);
+
+  return `<div class="panel">${head(title,sub,mktBadge+flags+right)}
+  ${legend}${toggle}
+  <svg viewBox="0 0 ${PW} ${H}" height="${H}" preserveAspectRatio="none">
+    ${gridRects(H)}${axis}${bars}${ref}${ghost}
+  </svg></div>`;
+}
+
+/* -- loads ------------------------------------------------- */
+function panelLoads(){
+  const H=150;
+  const nSel = SEL.size, nAll = FLIGHTS.length;
+  if(!nSel){
+    return `<div class="panel">${head(NAMES.loads,"· nothing selected","0 of "+nAll+" flights")}
+      <div class="p-sub"><div class="seg seg-sm" id="lvSeg">${[["total","Total"],["region","By market"],["flight","Per flight"],["avg","Avg / flight"]].map(([v,l])=>`<button data-lv="${v}" aria-pressed="${S.lv===v}">${l}</button>`).join("")}</div></div>
+      <svg viewBox="0 0 ${PW} 60" height="60" preserveAspectRatio="none">${gridRects(60)}
+      <text x="${PAD_L+4}" y="34" fill="var(--ink3)" font-size="11.5" font-family="var(--body)">Pick flights in the side panel to plot them.</text></svg></div>`;
+  }
+  const modes = [["total","Total"],["region","By market"],["flight","Per flight"],["avg","Avg / flight"]];
+  const segs = modes.map(([v,l])=>
+    `<button data-lv="${v}" aria-pressed="${S.lv===v}">${l}</button>`).join("");
+
+  let body="", right="", sub="";
+  const realN = DAYS.filter(d=>REAL_WEEK.has(d)).length;
+  const stamp = realN?`<span style="color:var(--loads)">● ${realN} actual</span> · `:"";
+
+  if(S.lv==="region"){
+    /* stacked areas, biggest market on the bottom */
+    const stack = REGIONS.map(r=>({r,v:DAYS.map(d=>regionSplit(d,true)[r]||0)}))
+                         .filter(s=>s.v.some(v=>v>0));
+    const totals = DAYS.map((d,i)=>stack.reduce((a,s)=>a+s.v[i],0));
+    const max = Math.max(...totals,1)*1.06;
+    const y = v => H-6-(H-20)*(v/max);
+    const running = DAYS.map(()=>0);
+    stack.forEach(s=>{
+      const top = s.v.map((v,i)=>{ running[i]+=v; return running[i]; });
+      const bot = top.map((v,i)=>v-s.v[i]);
+      body += `<path d="M${xAt(0)},${y(bot[0])}`+
+        top.map((v,i)=>"L"+xAt(i)+","+y(v)).join("")+
+        bot.slice().reverse().map((v,i)=>"L"+xAt(DAYS.length-1-i)+","+y(v)).join("")+
+        `Z" fill="${REGION_COL[s.r]}" opacity=".72"/>`;
+    });
+    body += yTicks(H,max,kk,2);
+    const tot = totals.reduce((a,b)=>a+b,0);
+    const leg = legRow(stack.map(s=>{
+      const st=s.v.reduce((a,b)=>a+b,0);
+      return kSq(REGION_COL[s.r], s.r, kk(st)+" · "+Math.round(st/tot*100)+"%");
+    }));
+    sub = "· stacked by source market";
+    return `<div class="panel">${head(NAMES.loads,sub,kk(tot)+" pax")}
+      ${leg}
+      <div class="p-sub"><div class="seg seg-sm" id="lvSeg">${segs}</div>
+      <span class="pick">${nSel} of ${nAll} flights</span></div>
+      <svg viewBox="0 0 ${PW} ${H}" height="${H}" preserveAspectRatio="none">${gridRects(H)}${body}</svg></div>`;
+  }
+
+  if(S.lv==="flight"){
+    const shown = FLIGHTS.filter(f=>SEL.has(f.k)).slice(0,40);
+    const max = Math.max(1,...shown.flatMap(f=>DAYS.map(d=>flightPax(f,d))))*1.08;
+    const y = v => H-6-(H-20)*(v/max);
+    shown.forEach(f=>{
+      /* break the line wherever the flight doesn't operate */
+      let dSeg="", open=false;
+      DAYS.forEach((d,i)=>{
+        const v=flightPax(f,d);
+        if(v>0){ dSeg += (open?"L":"M")+xAt(i)+","+y(v); open=true; }
+        else open=false;
+      });
+      if(dSeg) body += `<path d="${dSeg}" fill="none" stroke="${REGION_COL[f.r]}" stroke-width="1.3" opacity=".7"/>`;
+    });
+    body += yTicks(H,max,kk,2);
+    right = shown.length<SEL.size ? `showing 40 of ${SEL.size} — narrow the picker` : `${shown.length} flights`;
+    sub = "· one line per flight";
+    const mk=[...new Set(shown.map(f=>f.r))];
+    const leg = legRow([...mk.map(r=>kLn(REGION_COL[r],r)),
+      `<span class="sep"></span>`,
+      `<span class="k"><span class="val">a gap in a line means the flight doesn't operate that day</span></span>`]);
+    return `<div class="panel">${head(NAMES.loads,sub,stamp+right)}
+      ${leg}
+      <div class="p-sub"><div class="seg seg-sm" id="lvSeg">${segs}</div>
+      <span class="pick">${nSel} of ${nAll} flights</span></div>
+      <svg viewBox="0 0 ${PW} ${H}" height="${H}" preserveAspectRatio="none">${gridRects(H)}${body}</svg></div>`;
+  }
+
+  /* total or average */
+  const avg = S.lv==="avg";
+  const cur = DAYS.map(d=>{
+    const t=selLoad(d);
+    if(!avg) return t;
+    const n=operatingFlights(d,true).length;
+    return n?t/n:0;
+  });
+  const prev = S.cmp==="off" ? null : DAYS.map(d=>{
+    const p=priorDate(d,S.cmp), t=selLoad(p);
+    if(!avg) return t;
+    const n=operatingFlights(p,true).length;
+    return n?t/n:0;
+  });
+  const max=Math.max(...cur,...(prev||[0]),1)*1.10;
+  const y=v=>H-6-(H-20)*(v/max);
+  const path=a=>a.map((v,i)=>(i?"L":"M")+xAt(i)+","+y(v)).join("");
+  body = yTicks(H,max,kk,2);
+  body += `<path d="M${xAt(0)},${H-6}${cur.map((v,i)=>"L"+xAt(i)+","+y(v)).join("")}L${xAt(DAYS.length-1)},${H-6}Z" fill="var(--loads)" opacity=".09"/>`;
+  if(prev) body += `<path d="${path(prev)}" fill="none" stroke="var(--ink2)" stroke-width="1.4" stroke-dasharray="4 3" opacity=".7"/>`;
+  body += `<path d="${path(cur)}" fill="none" stroke="var(--loads)" stroke-width="2.2"/>`;
+  DAYS.forEach((d,i)=>{ if(REAL_WEEK.has(d))
+    body += `<circle cx="${xAt(i)}" cy="${y(cur[i])}" r="3" fill="var(--loads)" stroke="#fff" stroke-width="1.5"/>`; });
+
+  right = stamp + (avg
+    ? Math.round(cur.reduce((a,b)=>a+b,0)/cur.length)+" pax avg per flight"
+    : kk(cur.reduce((a,b)=>a+b,0))+" pax");
+  sub = avg ? "· mean load per operating flight" : "· departing pax, selected flights";
+  const leg = legRow([
+    kLn("var(--loads)", avg?"Average load per flight":NAMES.loads),
+    realN ? kDot("var(--loads)","Actual from load file") : "",
+    prev ? kDsh("var(--ink2)", S.cmp==="wday"?"Same weekday last year":"Same date last year") : ""
+  ]);
+
+  return `<div class="panel">${head(NAMES.loads,sub,right)}
+    ${leg}
+    <div class="p-sub"><div class="seg seg-sm" id="lvSeg">${segs}</div>
+    <span class="pick">${nSel} of ${nAll} flights</span></div>
+    <svg viewBox="0 0 ${PW} ${H}" height="${H}" preserveAspectRatio="none">${gridRects(H)}${body}</svg></div>`;
+}
+
+/* -- bands ------------------------------------------------- */
+function panelBands(kind,title,col){
+  const items = DATA[kind].filter(o=>o.store===S.store && !(o.to<DAYS[0]||o.from>DAYS[DAYS.length-1]));
+  const rows = packRows(items);
+  const H = Math.max(34, rows.length*26+10);
+  let bands="";
+  rows.forEach((rw,ri)=>rw.forEach(({o,sp})=>{
+    const x=xL(sp[0]), w=Math.max(COLW,(sp[1]-sp[0]+1)*COLW), yy=6+ri*26;
+    bands+=`<g>
+      <rect x="${x+1}" y="${yy}" width="${w-2}" height="19" rx="3" fill="${col}" opacity=".16"/>
+      <rect x="${x+1}" y="${yy}" width="3" height="19" rx="1.5" fill="${col}" opacity="${o.from<DAYS[0]?.35:1}"/>
+      <text x="${x+10}" y="${yy+13.5}" fill="var(--ink)" font-size="11" font-family="var(--body)"
+        clip-path="inset(0 ${Math.max(0,PW-(x+w-4))}px 0 0)">${esc(o.name)}${o.spend?" · "+money(o.spend):""}</text>
+    </g>`;
+  }));
+  if(!items.length) bands=`<text x="${PAD_L+4}" y="21" fill="var(--ink3)" font-size="11.5" font-family="var(--body)">Nothing scheduled in this window — add one from the layers panel.</text>`;
+  const types=[...new Set(items.map(o=>o.type||o.cat).filter(Boolean))];
+  const leg = types.length ? legRow([kSq(col,title),
+    `<span class="sep"></span>`,
+    ...types.map(t=>`<span class="k"><span class="val">${esc(t)}</span></span>`)]) : "";
+  return `<div class="panel">${head(title,"· "+items.length+" in window",
+    kind==="camp"?money(items.reduce((a,b)=>a+(b.spend||0),0))+" committed":"")}
+  ${leg}
+  <svg viewBox="0 0 ${PW} ${H}" height="${H}" preserveAspectRatio="none">${gridRects(H)}${bands}</svg></div>`;
+}
+
+/* -- markers ----------------------------------------------- */
+function panelMoves(){
+  const H=40; let m="";
+  DAYS.forEach((d,i)=>{
+    const hits=DATA.move.filter(o=>o.store===S.store&&o.date===d);
+    if(!hits.length) return;
+    const x=xAt(i);
+    m+=`<path d="M${x},${H/2-9} L${x+7.5},${H/2+5} L${x-7.5},${H/2+5} Z" fill="var(--moves)"/>`;
+    if(hits.length>1) m+=`<text x="${x}" y="${H/2+2.5}" text-anchor="middle" font-size="8.5" font-family="var(--mono)" fill="#fff" font-weight="700">${hits.length}</text>`;
+  });
+  const n=DATA.move.filter(o=>o.store===S.store&&DAYS.includes(o.date)).length;
+  return `<div class="panel">${head(NAMES.move,"· retimes, cancellations, gate changes",n+" logged")}
+  ${legRow([kTri("var(--moves)",NAMES.move,"hover a marker for the detail")])}
+  <svg viewBox="0 0 ${PW} ${H}" height="${H}" preserveAspectRatio="none">${gridRects(H)}${m}</svg></div>`;
+}
+function panelNotes(){
+  const H=44; let m="";
+  DAYS.forEach((d,i)=>{
+    const hits=DATA.note.filter(o=>o.store===S.store&&o.date===d);
+    if(!hits.length) return;
+    const x=xAt(i);
+    hits.slice(0,3).forEach((h,j)=>m+=`<circle cx="${x}" cy="${14+j*9}" r="3.6" fill="var(--notes)" opacity="${1-j*.2}"/>`);
+    if(hits.length>3) m+=`<text x="${x+7}" y="17" font-size="9" font-family="var(--mono)" fill="var(--ink3)">+${hits.length-3}</text>`;
+  });
+  const n=DATA.note.filter(o=>o.store===S.store&&DAYS.includes(o.date)).length;
+  return `<div class="panel">${head(NAMES.note,"· what the floor saw",n+" from staff")}
+  ${legRow([kDot("var(--notes)",NAMES.note,"one dot per comment")])}
+  <svg viewBox="0 0 ${PW} ${H}" height="${H}" preserveAspectRatio="none">${gridRects(H)}${m}</svg></div>`;
+}
+
+/* -- currency (now last) ----------------------------------- */
+function panelFX(){
+  const H=104, series=FX_CCY.map(f=>({f,v:DAYS.map(d=>fxIndex(d,f.c))}));
+  const all=series.flatMap(s=>s.v);
+  const lo=Math.min(...all)-0.6, hi=Math.max(...all)+0.6;
+  const y=v=>H-12-(H-26)*((v-lo)/(hi-lo));
+  let lines="";
+  const keys=[];
+  series.forEach(s=>{
+    lines+=`<path d="${s.v.map((v,i)=>(i?"L":"M")+xAt(i)+","+y(v)).join("")}" fill="none" stroke="${s.f.col}" stroke-width="1.7"/>`;
+    const last=s.v[s.v.length-1];
+    keys.push(kLn(s.f.col, s.f.n, last.toFixed(1)+(last>101?" stronger":last<99?" weaker":" flat")));
+  });
+  const legend = legRow(keys);
+  const y100=y(100);
+  return `<div class="panel">${head(NAMES.fx,"· index vs 12-month norm — above 100 means stronger against the dollar")}
+  ${legend}
+  <svg viewBox="0 0 ${PW} ${H}" height="${H}" preserveAspectRatio="none">
+    ${gridRects(H)}
+    <line class="gl" x1="${PAD_L}" y1="${y100}" x2="${PW-padR()}" y2="${y100}" stroke-dasharray="3 3" stroke="var(--rule2)"/>
+    <text class="axl" x="${PAD_L-6}" y="${y100+3}" text-anchor="end">100</text>
+    ${lines}
+  </svg></div>`;
+}
+
+/* ============================================================
+   8. COMBINED — everything on one set of axes
+   ============================================================ */
+function panelCombined(){
+  const campRows  = S.on.camp  ? packRows(DATA.camp.filter(o=>o.store===S.store  && !(o.to<DAYS[0]||o.from>DAYS[DAYS.length-1]))) : [];
+  const promoRows = S.on.promo ? packRows(DATA.promo.filter(o=>o.store===S.store && !(o.to<DAYS[0]||o.from>DAYS[DAYS.length-1]))) : [];
+
+  const MARK_H  = (S.on.move||S.on.note) ? 22 : 0;
+  const BAND_H  = (campRows.length+promoRows.length)*13 + ((campRows.length||promoRows.length)?6:0);
+  const TOP     = MARK_H + BAND_H;
+  const PLOT_H  = 300;
+  const H       = TOP + PLOT_H;
+  const pTop    = TOP + 8, pBot = H - 6;
+
+  let g = gridRects(H);
+
+  /* -- marker lane -- */
+  if(MARK_H){
+    DAYS.forEach((d,i)=>{
+      const x=xAt(i);
+      const mv=S.on.move?DATA.move.filter(o=>o.store===S.store&&o.date===d):[];
+      const nt=S.on.note?DATA.note.filter(o=>o.store===S.store&&o.date===d):[];
+      if(mv.length) g+=`<path d="M${x-(nt.length?6:0)},4 L${x-(nt.length?6:0)+6},15 L${x-(nt.length?6:0)-6},15 Z" fill="var(--moves)"/>`;
+      if(nt.length) g+=`<circle cx="${x+(mv.length?6:0)}" cy="10.5" r="4" fill="var(--notes)"/>`+
+        (nt.length>1?`<text x="${x+(mv.length?6:0)}" y="13.5" text-anchor="middle" font-size="7.5" font-family="var(--mono)" fill="#fff" font-weight="700">${nt.length}</text>`:"");
+    });
+  }
+
+  /* -- band lanes -- */
+  let by = MARK_H + 3;
+  const drawBands = (rows,col)=>{
+    rows.forEach(rw=>{
+      rw.forEach(({o,sp})=>{
+        const x=xL(sp[0]), w=Math.max(COLW,(sp[1]-sp[0]+1)*COLW);
+        g+=`<rect x="${x+1}" y="${by}" width="${w-2}" height="10" rx="2" fill="${col}" opacity=".22"/>`;
+        g+=`<rect x="${x+1}" y="${by}" width="2.5" height="10" rx="1" fill="${col}"/>`;
+        if(w>78) g+=`<text x="${x+8}" y="${by+7.8}" font-size="8.5" font-family="var(--body)" fill="var(--ink2)"
+          clip-path="inset(0 ${Math.max(0,PW-(x+w-4))}px 0 0)">${esc(o.name)}</text>`;
+      });
+      by+=13;
+    });
+  };
+  drawBands(campRows,"#2F6FD0");
+  drawBands(promoRows,"#1D9E75");
+  if(TOP) g+=`<line class="gl" x1="${PAD_L}" y1="${TOP+1}" x2="${PW-padR()}" y2="${TOP+1}" stroke="var(--rule2)"/>`;
+
+  /* -- left axis: sales -- */
+  const _nE = windowMeanExpected(S.store);
+  const _sv = d => S.sv==="adj" ? adjustedSales(d,S.store,_nE) : baseSales(d,S.store);
+  const sales = DAYS.map(_sv);
+  const prevS = S.cmp==="off"?null:DAYS.map(d=>_sv(priorDate(d,S.cmp)));
+  const sMax = Math.max(...sales, ...(prevS||[0]))*1.15;
+  const ys = v => pBot - (pBot-pTop)*(v/sMax);
+
+  if(S.on.sales){
+    for(let i=0;i<=3;i++){
+      const v=sMax*i/3, y=ys(v);
+      g+=`<line class="gl" x1="${PAD_L}" y1="${y}" x2="${PW-padR()}" y2="${y}" opacity="${i?.55:1}"/>`;
+      g+=`<text class="axl" x="${PAD_L-6}" y="${y+3}" text-anchor="end" fill="var(--sales)">$${kk(v)}</text>`;
+    }
+    DAYS.forEach((d,i)=>{
+      const w=Math.max(2,COLW*0.58), x=xAt(i)-w/2;
+      g+=`<rect x="${x}" y="${ys(sales[i])}" width="${w}" height="${pBot-ys(sales[i])}" fill="var(--sales)" opacity="${isWknd(d)?.9:.55}" rx="1"/>`;
+    });
+    if(prevS) g+=`<path d="${prevS.map((v,i)=>(i?"L":"M")+xAt(i)+","+ys(v)).join("")}" fill="none" stroke="var(--ink2)" stroke-width="1.4" stroke-dasharray="4 3" opacity=".8"/>`;
+    if(S.mkt){
+      const expC = DAYS.map(d=>S.sv==="adj" ? _nE : expectedSales(d,S.store));
+      g+=`<path d="${expC.map((v,i)=>(i?"L":"M")+xAt(i)+","+ys(v)).join("")}" fill="none"
+        stroke="var(--ink3)" stroke-width="1.5" stroke-dasharray="6 3" opacity=".8"/>`;
+    }
+  }
+
+  /* -- right axis: loads -- */
+  if(S.on.loads){
+    const loads=DAYS.map(selLoad);
+    const lMin=Math.min(...loads)*0.88, lMax=Math.max(...loads)*1.06;
+    const yl=v=>pBot-(pBot-pTop)*((v-lMin)/(lMax-lMin));
+    for(let i=0;i<=3;i++){
+      const v=lMin+(lMax-lMin)*i/3;
+      g+=`<text class="axl" x="${PW-padR()+6}" y="${yl(v)+3}" fill="var(--loads)">${kk(v)}</text>`;
+    }
+    g+=`<path d="${loads.map((v,i)=>(i?"L":"M")+xAt(i)+","+yl(v)).join("")}" fill="none" stroke="var(--loads)" stroke-width="2.2"/>`;
+    DAYS.forEach((d,i)=>{ if(REAL_WEEK.has(d))
+      g+=`<circle cx="${xAt(i)}" cy="${yl(loads[i])}" r="3" fill="var(--loads)" stroke="#fff" stroke-width="1.5"/>`; });
+    if(SEL.size<FLIGHTS.length)
+      g+=`<text class="axl" x="${PW-padR()+6}" y="${pTop-2}" fill="var(--loads)">${SEL.size} flts</text>`;
+  }
+
+  /* -- currency, overlaid on its own hidden scale -- */
+  if(S.on.fx){
+    const ser=FX_CCY.map(f=>({f,v:DAYS.map(d=>fxIndex(d,f.c))}));
+    const all=ser.flatMap(s=>s.v);
+    const lo=Math.min(...all)-1.2, hi=Math.max(...all)+1.2;
+    const yf=v=>pBot-(pBot-pTop)*((v-lo)/(hi-lo));
+    g+=`<line x1="${PAD_L}" y1="${yf(100)}" x2="${PW-padR()}" y2="${yf(100)}" stroke="var(--fx)" stroke-width="1" stroke-dasharray="2 4" opacity=".5"/>`;
+    ser.forEach(s=>g+=`<path d="${s.v.map((v,i)=>(i?"L":"M")+xAt(i)+","+yf(v)).join("")}" fill="none" stroke="${s.f.col}" stroke-width="1.3" opacity=".62" stroke-dasharray="5 2.5"/>`);
+  }
+
+  const legend = legRow([
+    S.on.sales ? kSq("var(--sales)", S.sv==="adj"?NAMES.sales+" (adjusted)":NAMES.sales, "left axis") : "",
+    (S.on.sales&&S.mkt) ? kDsh("var(--ink3)", NAMES.market) : "",
+    S.on.loads ? kLn("var(--loads)", NAMES.loads, "right axis") : "",
+    S.on.camp  ? kSq("#2F6FD0", NAMES.camp) : "",
+    S.on.promo ? kSq("#1D9E75", NAMES.promo) : "",
+    S.on.move  ? kTri("var(--moves)", NAMES.move) : "",
+    S.on.note  ? kDot("var(--notes)", NAMES.note) : "",
+    S.on.fx    ? kDsh("var(--fx)", NAMES.fx) : ""
+  ]);
+  return `<div class="panel">${head("All layers","· every layer on one set of axes")}
+  ${legend}
+  <svg viewBox="0 0 ${PW} ${H}" height="${H}" preserveAspectRatio="none">${g}</svg></div>`;
+}
+
+/* ============================================================
+   9. CALENDAR SPINE
+   ============================================================ */
+/* Slim date strip pinned to the top of the board, so whichever panel
+   you're reading, the day is directly above it. The full calendar with
+   holidays and the year-on-year weekday row stays at the bottom. */
+function dayRuler(){
+  const H=30; let m="";
+  DAYS.forEach((d,i)=>{
+    const x=xAt(i), hol=HOLIDAYS[d], wknd=isWknd(d);
+    if(hol) m+=`<rect x="${xL(i)}" y="0" width="${COLW}" height="${H}" fill="var(--hol)"/>`;
+    else if(wknd) m+=`<rect x="${xL(i)}" y="0" width="${COLW}" height="${H}" fill="var(--wknd)"/>`;
+    if(COLW>=9)
+      m+=`<text x="${x}" y="12" text-anchor="middle" font-size="9.5" font-family="var(--body)"
+           font-weight="${wknd?700:500}" fill="${wknd?"var(--ink)":"var(--ink3)"}">${DOW_L[dow(d)]}</text>`;
+    if(COLW>=15 || parse(d).getUTCDate()%5===0 || parse(d).getUTCDate()===1)
+      m+=`<text x="${x}" y="24" text-anchor="middle" font-size="10.5" font-family="var(--mono)"
+           font-weight="${hol?700:400}" fill="${hol?"var(--accent)":"var(--ink2)"}">${parse(d).getUTCDate()}</text>`;
+    if(hol && COLW>=9) m+=`<circle cx="${x}" cy="27.5" r="1.8" fill="${MKT_COLOR[hol[1]]||"var(--accent)"}"/>`;
+  });
+  DAYS.forEach((d,i)=>{
+    if(parse(d).getUTCDate()===1 || i===0){
+      m+=`<line x1="${xL(i)}" y1="0" x2="${xL(i)}" y2="${H}" stroke="var(--rule2)"/>`;
+      if(COLW*3>34) m+=`<text x="${xL(i)+4}" y="11" font-size="9" font-family="var(--body)" font-weight="700"
+        letter-spacing=".08em" fill="var(--accent)">${MON[parse(d).getUTCMonth()].toUpperCase()}</text>`;
+    }
+  });
+  return `<div class="ruler"><svg viewBox="0 0 ${PW} ${H}" height="${H}" preserveAspectRatio="none">${m}</svg></div>`;
+}
+
+function panelSpine(){
+  const two = S.cmp!=="off", H = two?74:52;
+  let m="";
+  DAYS.forEach((d,i)=>{
+    const x=xAt(i), hol=HOLIDAYS[d], wknd=isWknd(d);
+    if(hol) m+=`<rect x="${xL(i)}" y="0" width="${COLW}" height="${H}" fill="var(--hol)"/>`;
+    else if(wknd) m+=`<rect x="${xL(i)}" y="0" width="${COLW}" height="${H}" fill="var(--wknd)"/>`;
+    if(COLW>7)
+      m+=`<text x="${x}" y="15" text-anchor="middle" font-size="10.5" font-family="var(--body)" font-weight="${wknd?700:400}"
+           fill="${wknd?"var(--ink)":"var(--ink3)"}">${DOW_L[dow(d)]}</text>`;
+    if(COLW>17 || parse(d).getUTCDate()%5===0)
+      m+=`<text x="${x}" y="29" text-anchor="middle" font-size="10" font-family="var(--mono)" fill="var(--ink2)">${parse(d).getUTCDate()}</text>`;
+    if(hol){
+      m+=`<circle cx="${x}" cy="38" r="3" fill="${MKT_COLOR[hol[1]]||"var(--accent)"}"/>`;
+      if(COLW>30) m+=`<text x="${x}" y="50" text-anchor="middle" font-size="8" font-family="var(--body)" font-weight="600"
+        letter-spacing=".04em" fill="${MKT_COLOR[hol[1]]||"var(--accent)"}">${esc(hol[0].toUpperCase().slice(0,11))}</text>`;
+    }
+    if(two){
+      const p=priorDate(d,S.cmp), pw=dow(p), miss=pw!==dow(d);
+      if(i===0) m+=`<line class="gl" x1="${PAD_L}" y1="${H-26}" x2="${PW-padR()}" y2="${H-26}" stroke="var(--rule2)"/>`;
+      if(COLW>7)
+        m+=`<text x="${x}" y="${H-12}" text-anchor="middle" font-size="10.5" font-family="var(--body)"
+             font-weight="${miss?700:400}" fill="${miss?"var(--neg)":"var(--ink3)"}">${DOW_L[pw]}</text>`;
+      if(HOLIDAYS[p]) m+=`<circle cx="${x}" cy="${H-4}" r="2.4" fill="${MKT_COLOR[HOLIDAYS[p][1]]||"var(--accent)"}" opacity=".8"/>`;
+    }
+  });
+  DAYS.forEach((d,i)=>{ if(parse(d).getUTCDate()===1 && i>0)
+    m+=`<line x1="${xL(i)}" y1="0" x2="${xL(i)}" y2="${H}" stroke="var(--rule2)" stroke-width="1"/>`; });
+  const lbl = two ? (S.cmp==="wday"?"52 wks back":parse(DAYS[0]).getUTCFullYear()-1) : "";
+  const hm=[...new Set(DAYS.filter(d=>HOLIDAYS[d]).map(d=>HOLIDAYS[d][1]))];
+  const MKT_NAME={US:"US holiday",CN:"China holiday",JP:"Japan holiday",KR:"Korea holiday"};
+  const leg = legRow([
+    kSq("#EDE7E0","Weekend"),
+    ...hm.map(m=>kDot(MKT_COLOR[m], MKT_NAME[m]||m)),
+    two ? `<span class="sep"></span><span class="k"><span class="val">red weekday letter = the comparison day fell on a different weekday</span></span>` : ""
+  ]);
+  return `<div class="panel spine" id="spine">${leg}
+    <svg viewBox="0 0 ${PW} ${H}" height="${H}" preserveAspectRatio="none">${m}
+      <text class="axl" x="${PAD_L-6}" y="15" text-anchor="end">DAY</text>
+      ${two?`<text class="axl" x="${PAD_L-6}" y="${H-12}" text-anchor="end">${lbl}</text>`:""}
+    </svg></div>`;
+}
+
+/* ============================================================
+   10. LAYER RAIL
+   ============================================================ */
+function renderFlightPicker(){
+  const q = FQ.trim().toLowerCase();
+  const match = f => !q || (f.a+" "+f.c+" "+f.f+" "+f.r).toLowerCase().includes(q);
+  let html="";
+  REGIONS.forEach(r=>{
+    const all = FLIGHTS.filter(f=>f.r===r);
+    const list = all.filter(match);
+    if(!list.length) return;
+    const on = list.filter(f=>SEL.has(f.k)).length;
+    const cls = on===list.length ? "on" : on>0 ? "some" : "";
+    const pax = list.reduce((a,f)=>a+f.p.reduce((x,y)=>x+y,0),0);
+    const open = EXPANDED.has(r) || !!q;
+    html += `<div class="fgrp" data-rgrp="${esc(r)}" style="color:${REGION_COL[r]}">
+      <span class="ar">${open?"▾":"▸"}</span>
+      <span class="cb ${cls}" data-rcb="${esc(r)}"></span>
+      <span class="nm">${r}</span><span class="ct">${list.length} · ${kk(pax)}</span></div>`;
+    if(open) list.forEach(f=>{
+      html += `<div class="frow" data-fk="${esc(f.k)}" style="color:${REGION_COL[r]}">
+        <span class="cb ${SEL.has(f.k)?"on":""}"></span>
+        <span class="fc">${esc(f.c)} ${esc(f.f)}</span>
+        <span class="fa">${esc(f.a)}</span>
+        <span class="fp">${esc(f.t)}</span></div>`;
+    });
+  });
+  document.getElementById("fpTree").innerHTML = html || `<div class="note-src">No flights match that.</div>`;
+  document.getElementById("fpCount").textContent = SEL.size+"/"+FLIGHTS.length;
+}
+
+function renderRail(){
+  const counts = {
+    sales:"", loads:DAYS.filter(d=>REAL_WEEK.has(d)).length+"/"+DAYS.length, fx:"4 ccy",
+    camp:DATA.camp.filter(o=>o.store===S.store).length,
+    promo:DATA.promo.filter(o=>o.store===S.store).length,
+    move:DATA.move.filter(o=>o.store===S.store&&DAYS.includes(o.date)).length,
+    note:DATA.note.filter(o=>o.store===S.store&&DAYS.includes(o.date)).length
+  };
+  document.getElementById("layers").innerHTML = LAYERS.map(l=>
+    `<div class="lyr ${S.on[l.k]?"on":"off"}" data-lyr="${l.k}" style="color:${l.col}">
+      <span class="sw" style="background:${l.col}"></span>
+      <span class="nm">${l.nm}</span><span class="ct">${counts[l.k]}</span>
+    </div>`).join("");
+}
+
+/* ============================================================
+   11. SCRUBBER
+   ============================================================ */
+const scrub=document.getElementById("scrub"), readout=document.getElementById("readout"), main=document.getElementById("main");
+function colFromX(clientX){
+  const r=board.getBoundingClientRect();
+  const px=(clientX-r.left)/r.width*PW;
+  if(px<PAD_L||px>PW-padR()) return -1;
+  const i=Math.floor((px-PAD_L)/COLW);
+  return (i>=0&&i<DAYS.length)?i:-1;
+}
+function showCol(i,cx,cy){
+  if(i<0){ hideCol(); return; }
+  const r=board.getBoundingClientRect();
+  scrub.style.left=(r.left-main.getBoundingClientRect().left+main.scrollLeft+xAt(i)/PW*r.width)+"px";
+  scrub.style.opacity=1;
+  readout.innerHTML=readoutFor(DAYS[i]);
+  readout.style.opacity=1;
+  const w=readout.offsetWidth,h=readout.offsetHeight;
+  let lx=cx+16; if(lx+w>innerWidth-8) lx=cx-w-16;
+  let ly=Math.max(8,Math.min(innerHeight-h-8,cy-h/2));
+  readout.style.left=lx+"px"; readout.style.top=ly+"px";
+}
+function hideCol(){ scrub.style.opacity=0; readout.style.opacity=0; }
+const row=(l,v)=>`<div class="rr"><i>${l}</i><b>${v}</b></div>`;
+
+function readoutFor(d){
+  const sales=baseSales(d,S.store), load=baseLoad(d), hol=HOLIDAYS[d];
+  let h=`<div class="rd">${DOW_N[dow(d)]} ${fmtD(d)}</div>`;
+  h+=`<div class="rf">${parse(d).getUTCFullYear()}${hol?" · "+esc(hol[0])+" ("+hol[1]+")":isWknd(d)?" · weekend":""}</div>`;
+  h+=row("Sales",money(sales));
+  h+=row(NAMES.loads,load.toLocaleString()+(REAL_WEEK.has(d)?" ✓":""));
+  if(SEL.size<FLIGHTS.length){
+    const sl=selLoad(d), nf=operatingFlights(d,true).length;
+    h+=row(NAMES.loads+" (selected)","<span style='color:var(--loads)'>"+sl.toLocaleString()+"</span> · "+nf+" flts");
+  }
+  h+=row("Spend / pax","$"+(sales/load).toFixed(2));
+  {
+    const e=expectedSales(d,S.store), pi=perfIndex(d,S.store);
+    h+=row(NAMES.market,money(e));
+    h+=`<div class="rr"><i>Index</i><b style="color:${pi>=100?"var(--pos)":"var(--neg)"}">${pi.toFixed(1)}</b></div>`;
+  }
+  if(S.cmp!=="off"){
+    const p=priorDate(d,S.cmp), ps=baseSales(p,S.store), dl=(sales-ps)/ps*100;
+    h+=`<div class="rn"><div class="rr"><i>${DOW_N[dow(p)]} ${fmtD(p)} ${parse(p).getUTCFullYear()}</i>
+      <b style="color:${dl>=0?"var(--pos)":"var(--neg)"}">${dl>=0?"+":""}${dl.toFixed(1)}%</b></div>
+      ${dow(p)!==dow(d)?`<div style="color:var(--neg);font-size:11px;margin-top:3px">Different weekday — ${DOW_N[dow(p)]} vs ${DOW_N[dow(d)]}</div>`:""}</div>`;
+  }
+  if(S.on.fx){
+    const j=fxIndex(d,"JPY");
+    h+=row(NAMES.fx+" (JPY)",j.toFixed(1)+(j>101?" strong":j<99?" weak":""));
+  }
+  const camps=DATA.camp.filter(o=>inRange(o,d)), proms=DATA.promo.filter(o=>inRange(o,d));
+  if(S.on.camp&&camps.length)  h+=`<div class="rn"><em style="color:var(--camp)">${NAMES.camp}:</em> ${camps.map(c=>esc(c.name)).join("; ")}</div>`;
+  if(S.on.promo&&proms.length) h+=`<div class="rn"><em style="color:var(--promo)">${NAMES.promo}:</em> ${proms.map(c=>esc(c.name)).join("; ")}</div>`;
+  DATA.move.filter(o=>o.store===S.store&&o.date===d).forEach(m=>
+    h+=`<div class="rn"><em style="color:var(--moves)">${esc(m.kind)} ${esc(m.flt)}</em> — ${esc(m.detail)}</div>`);
+  DATA.note.filter(o=>o.store===S.store&&o.date===d).forEach(n=>
+    h+=`<div class="rn"><em style="color:var(--notes)">${esc(n.who)}</em> — ${esc(n.text)}</div>`);
+  return h;
+}
+main.addEventListener("mousemove",e=>showCol(colFromX(e.clientX),e.clientX,e.clientY));
+main.addEventListener("mouseleave",hideCol);
+main.addEventListener("touchstart",e=>{const t=e.touches[0];showCol(colFromX(t.clientX),t.clientX,t.clientY);},{passive:true});
+main.addEventListener("touchmove",e=>{const t=e.touches[0];showCol(colFromX(t.clientX),t.clientX,t.clientY);},{passive:true});
+main.addEventListener("touchend",hideCol);
+main.addEventListener("click",e=>{const i=colFromX(e.clientX); if(i>=0) openModal("note",DAYS[i]);});
+
+/* ============================================================
+   12. MODALS
+   ============================================================ */
+const scrim=document.getElementById("scrim"), modal=document.getElementById("modal");
+const closeModal=()=>{ scrim.classList.remove("on"); modal.innerHTML=""; };
+scrim.addEventListener("click",e=>{ if(e.target===scrim) closeModal(); });
+addEventListener("keydown",e=>{ if(e.key==="Escape") closeModal(); });
+
+const FORMS = {
+  note:{t:"Add day note",f:[
+    {k:"date",l:"Date",ty:"date"},
+    {k:"who",l:"Who's reporting",ty:"text",ph:"M. Reyes, GM"},
+    {k:"tag",l:"What kind",ty:"chips",opts:["Weather","Traffic","Staffing","Ops","Competitor","Other"]},
+    {k:"text",l:"What happened",ty:"area",ph:"Soft afternoon — rain delay pushed arrivals late and pax went straight to gate."}
+  ]},
+  move:{t:"Log a flight move",f:[
+    {k:"date",l:"Date",ty:"date"},
+    {k:"flt",l:"Flight",ty:"text",ph:"CA 984"},
+    {k:"kind",l:"What changed",ty:"chips",opts:["Retimed","Cancelled","Gate change","Added","Diverted"]},
+    {k:"detail",l:"Detail from the notification",ty:"area",ph:"2325 → 0140 next day. Pax cleared security after our close."}
+  ]},
+  promo:{t:"Add active promo",f:[
+    {k:"name",l:"Promo as it reads on the fixture",ty:"text",ph:"Save $15 on 2 Fragrances"},
+    {k:"cat",l:"Category",ty:"chips",opts:["Fragrance","Liquor","Confectionery","Beauty","Tobacco","Accessories"]},
+    {k:"from",l:"Starts",ty:"date"},{k:"to",l:"Ends",ty:"date"}
+  ]},
+  camp:{t:"Add campaign or activation",f:[
+    {k:"name",l:"Campaign name",ty:"text",ph:"Summer Travel Retail — Estée Lauder"},
+    {k:"type",l:"Type",ty:"chips",opts:["Activation","Media rental","Store owned","Marketing"]},
+    {k:"from",l:"Starts",ty:"date"},{k:"to",l:"Ends",ty:"date"},
+    {k:"spend",l:"Committed spend (USD)",ty:"text",ph:"48000"}
+  ]}
+};
+function openModal(kind,presetDate){
+  const cfg=FORMS[kind]; if(!cfg) return;
+  const today=presetDate||DAYS[Math.floor(DAYS.length/2)];
+  const body=cfg.f.map(f=>{
+    if(f.ty==="chips") return `<div class="row"><label>${f.l}</label><div class="chips" data-chips="${f.k}">
+      ${f.opts.map((o,i)=>`<button type="button" class="chip" data-v="${o}" aria-pressed="${i===0}">${o}</button>`).join("")}</div></div>`;
+    if(f.ty==="area") return `<div class="row"><label>${f.l}</label><textarea data-k="${f.k}" placeholder="${f.ph||""}"></textarea></div>`;
+    const v=f.ty==="date"?` value="${f.k==="to"?addD(today,13):today}"`:"";
+    return `<div class="row"><label>${f.l}</label><input type="${f.ty}" data-k="${f.k}" placeholder="${f.ph||""}"${v}></div>`;
+  }).join("");
+  modal.innerHTML=`<h4>${cfg.t}</h4><div class="bd">${body}
+    <div style="font-size:11.5px;color:var(--ink3);line-height:1.5">Saved to this device for now. Use <b style="color:var(--ink2)">Copy rows for spreadsheet</b> to push it to the master file so everyone sees it.</div>
+    </div><div class="ft"><button class="btn" data-x="cancel">Cancel</button><button class="btn pri" data-x="save">Add to timeline</button></div>`;
+  scrim.classList.add("on");
+  modal.querySelectorAll("[data-chips]").forEach(g=>g.addEventListener("click",e=>{
+    const b=e.target.closest(".chip"); if(!b) return;
+    g.querySelectorAll(".chip").forEach(c=>c.setAttribute("aria-pressed",c===b));
+  }));
+  modal.querySelector('[data-x="cancel"]').onclick=closeModal;
+  modal.querySelector('[data-x="save"]').onclick=()=>{
+    const rec={id:uid(kind[0]),store:S.store};
+    modal.querySelectorAll("[data-k]").forEach(el=>rec[el.dataset.k]=el.value.trim());
+    modal.querySelectorAll("[data-chips]").forEach(g=>{
+      const on=g.querySelector('.chip[aria-pressed="true"]');
+      rec[g.dataset.chips]=on?on.dataset.v:"";
+    });
+    if(rec.spend) rec.spend=Number(String(rec.spend).replace(/[^0-9.]/g,""))||0;
+    if(kind==="note"&&!rec.text) return;
+    if((kind==="promo"||kind==="camp")&&!rec.name) return;
+    if(kind==="move"&&!rec.flt) return;
+    DATA[kind].push(rec); save(); closeModal(); render();
+  };
+}
+/* ---- model settings ---- */
+function openModelModal(){
+  const F = [["vol","Pax volume","how many people flew that day"],
+             ["mix","Pax mix","which source markets they came from"],
+             ["fx","Currency","what their money was worth"],
+             ["cal","Day &amp; holiday","weekday pattern and holiday lift"]];
+  const rows = Object.keys(MODEL.coef).map(r=>
+    `<tr><td style="padding:3px 0;font-size:12px">${r}</td>
+     <td style="text-align:right"><input type="text" data-coef="${r}" value="${MODEL.coef[r].toFixed(2)}"
+       style="width:62px;text-align:right;font-family:var(--mono);font-size:11.5px"></td>
+     <td style="padding-left:8px;font-size:10.5px;color:var(--ink3)">${MODEL.ccy[r]||"—"}</td></tr>`).join("");
+  modal.innerHTML = `<h4>Adjustment model</h4><div class="bd">
+    <div style="font-size:12px;color:var(--ink2);line-height:1.55">
+      Sales are pax &times; capture &times; basket. This strips out the parts you don't control, so what's
+      left is what merchandising and marketing actually did. Index 100 means the day landed exactly where
+      conditions said it would.
+    </div>
+
+    <div class="row"><label>Strip out</label>
+      ${F.map(([k,n,d])=>`<label style="display:flex;gap:8px;align-items:flex-start;padding:3px 0;cursor:pointer">
+        <input type="checkbox" data-flag="${k}" ${MODEL.on[k]?"checked":""} style="margin-top:2px">
+        <span style="font-size:12px"><b>${n}</b> <span style="color:var(--ink3)">— ${d}</span></span></label>`).join("")}
+    </div>
+
+    <div class="row"><label>Spend per pax by source market (USD)</label>
+      <table style="width:100%;border-collapse:collapse">${rows}</table>
+      <div style="font-size:11px;color:var(--neg);line-height:1.5;margin-top:4px">
+        These are placeholders, not measurements. Fit them against real sales and load history before
+        anyone quotes a lift number off this.
+      </div>
+    </div>
+
+    <div class="row"><label>Currency elasticity — ${MODEL.elast.toFixed(2)}</label>
+      <input type="range" min="0" max="1.5" step="0.05" value="${MODEL.elast}" data-elast style="width:100%">
+      <div style="font-size:11px;color:var(--ink3);line-height:1.45">
+        How much a 1% move in a market's currency shifts its spend. 0 ignores currency entirely;
+        0.45 is a reasonable travel-retail starting point.
+      </div>
+    </div>
+  </div>
+  <div class="ft">
+    <button class="btn" data-x="fit">Fit to window</button>
+    <button class="btn" data-x="reset">Reset</button>
+    <button class="btn pri" data-x="apply">Apply</button>
+  </div>`;
+  scrim.classList.add("on");
+
+  const readForm = () => {
+    modal.querySelectorAll("[data-flag]").forEach(c=>MODEL.on[c.dataset.flag]=c.checked);
+    modal.querySelectorAll("[data-coef]").forEach(i=>{
+      const v=parseFloat(i.value); if(!isNaN(v)&&v>0) MODEL.coef[i.dataset.coef]=v;
+    });
+    const el=modal.querySelector("[data-elast]"); if(el) MODEL.elast=parseFloat(el.value);
+  };
+  const el = modal.querySelector("[data-elast]");
+  el.addEventListener("input",()=>{
+    el.closest(".row").querySelector("label").textContent =
+      "Currency elasticity — "+parseFloat(el.value).toFixed(2);
+  });
+  modal.querySelector('[data-x="apply"]').onclick = ()=>{ readForm(); closeModal(); if(S.sv==="actual") S.sv="market",syncSV(); render(); };
+  modal.querySelector('[data-x="reset"]').onclick = ()=>{
+    MODEL.coef={"Greater China":6.20,"Korea":4.10,"Japan":3.90,"Middle East":3.40,
+                "SE Asia":3.20,"Oceania":2.90,"Europe":2.10,"Latin America":1.70};
+    MODEL.elast=0.45; MODEL.fitted=false; openModelModal();
+  };
+  modal.querySelector('[data-x="fit"]').onclick = ()=>{
+    readForm(); fitModel(); openModelModal();
+  };
+}
+function syncSV(){
+  document.querySelectorAll("#sv button").forEach(x=>x.setAttribute("aria-pressed", x.dataset.v===S.sv));
+}
+
+document.querySelectorAll("[data-add]").forEach(b=>b.addEventListener("click",()=>openModal(b.dataset.add)));
+
+document.getElementById("exportBtn").addEventListener("click",()=>{
+  const tsv=[];
+  const push=(sheet,hdr,rows)=>{ tsv.push("### "+sheet); tsv.push(hdr.join("\t")); rows.forEach(r=>tsv.push(r.join("\t"))); tsv.push(""); };
+  push("Day Notes",["Store","Date","Reported by","Type","Note"],DATA.note.map(n=>[n.store,n.date,n.who,n.tag,n.text]));
+  push("Flight Moves",["Store","Date","Flight","Change","Detail"],DATA.move.map(m=>[m.store,m.date,m.flt,m.kind,m.detail]));
+  push("Active Promos",["Store","Promo","Category","Start","End"],DATA.promo.map(p=>[p.store,p.name,p.cat,p.from,p.to]));
+  push("Campaigns",["Store","Campaign","Type","Start","End","Spend"],DATA.camp.map(c=>[c.store,c.name,c.type,c.from,c.to,c.spend||""]));
+  const out=tsv.join("\n");
+  modal.innerHTML=`<h4>Copy rows for spreadsheet</h4><div class="bd">
+    <div style="font-size:12px;color:var(--ink2);line-height:1.55">Paste each block into its sheet in <b>DFA_Master_Template_All_NAM.xlsx</b>. Once it's in the master file the app reads it like every other layer, and everyone sees it.</div>
+    <textarea class="exp" readonly>${esc(out)}</textarea></div>
+    <div class="ft"><button class="btn" data-x="cancel">Close</button><button class="btn pri" data-x="copy">Copy all</button></div>`;
+  scrim.classList.add("on");
+  modal.querySelector('[data-x="cancel"]').onclick=closeModal;
+  modal.querySelector('[data-x="copy"]').onclick=()=>{
+    const ta=modal.querySelector(".exp"); ta.select(); ta.setSelectionRange(0,99999);
+    try{ navigator.clipboard.writeText(out); }catch(e){ document.execCommand("copy"); }
+    modal.querySelector('[data-x="copy"]').textContent="Copied";
+  };
+});
+
+/* ============================================================
+   13. CONTROLS
+   ============================================================ */
+document.getElementById("store").addEventListener("change",e=>{S.store=e.target.value;render();});
+document.getElementById("from").addEventListener("change",e=>{S.from=e.target.value;render();});
+document.getElementById("to").addEventListener("change",e=>{S.to=e.target.value;render();});
+document.getElementById("cmp").addEventListener("click",e=>{
+  const b=e.target.closest("button"); if(!b) return;
+  S.cmp=b.dataset.v;
+  document.querySelectorAll("#cmp button").forEach(x=>x.setAttribute("aria-pressed",x===b));
+  render();
+});
+document.getElementById("sv").addEventListener("click",e=>{
+  const b=e.target.closest("button"); if(!b) return;
+  S.sv=b.dataset.v;
+  document.querySelectorAll("#sv button").forEach(x=>x.setAttribute("aria-pressed",x===b));
+  render();
+});
+document.getElementById("modelBtn").addEventListener("click",openModelModal);
+document.getElementById("mode").addEventListener("click",e=>{
+  const b=e.target.closest("button"); if(!b) return;
+  S.mode=b.dataset.v;
+  document.querySelectorAll("#mode button").forEach(x=>x.setAttribute("aria-pressed",x===b));
+  render();
+});
+document.getElementById("layers").addEventListener("click",e=>{
+  const l=e.target.closest("[data-lyr]"); if(!l) return;
+  S.on[l.dataset.lyr]=!S.on[l.dataset.lyr]; render();
+});
+document.getElementById("railBtn").addEventListener("click",()=>document.getElementById("rail").classList.toggle("open"));
+
+/* flight picker */
+document.getElementById("fq").addEventListener("input",e=>{ FQ=e.target.value; renderFlightPicker(); });
+document.querySelector(".fp-quick").addEventListener("click",e=>{
+  const b=e.target.closest("[data-fsel]"); if(!b) return;
+  const v=b.dataset.fsel;
+  if(v==="all") SEL=new Set(FLIGHTS.map(f=>f.k));
+  else if(v==="none") SEL=new Set();
+  else SEL=new Set(FLIGHTS.filter(f=>f.b===v).map(f=>f.k));
+  renderFlightPicker(); render();
+});
+document.getElementById("fpTree").addEventListener("click",e=>{
+  const cb=e.target.closest("[data-rcb]");
+  if(cb){
+    const r=cb.dataset.rcb;
+    const q=FQ.trim().toLowerCase();
+    const list=FLIGHTS.filter(f=>f.r===r && (!q||(f.a+" "+f.c+" "+f.f+" "+f.r).toLowerCase().includes(q)));
+    toggleFlights(list,!selAllIn(list));
+    renderFlightPicker(); render(); return;
+  }
+  const grp=e.target.closest("[data-rgrp]");
+  if(grp){
+    const r=grp.dataset.rgrp;
+    EXPANDED.has(r)?EXPANDED.delete(r):EXPANDED.add(r);
+    renderFlightPicker(); return;
+  }
+  const row=e.target.closest("[data-fk]");
+  if(row){
+    const k=row.dataset.fk;
+    SEL.has(k)?SEL.delete(k):SEL.add(k);
+    renderFlightPicker(); render();
+  }
+});
+/* loads view mode — the seg lives inside the re-rendered board */
+document.getElementById("board").addEventListener("click",e=>{
+  if(e.target.closest("#mktBtn")){ e.stopPropagation(); S.mkt=!S.mkt; render(); return; }
+  const b=e.target.closest("[data-lv]"); if(!b) return;
+  e.stopPropagation();
+  S.lv=b.dataset.lv; render();
+});
+renderFlightPicker();
+
+/* ============================================================
+   14. CAMPAIGNS PAGE — build, archive, report
+   The Timeline stays a reading surface. Everything that involves
+   writing something down lives here.
+   ============================================================ */
+let PG="timeline", CUR_REPORT=null, DRAFT=null;
+
+/* ---- metrics for a window, frozen at save time ---- */
+function metricsFor(store, from, to){
+  const days=[]; let d=from, guard=0;
+  while(d<=to && guard++<500){ days.push(d); d=addD(d,1); }
+  if(!days.length) days.push(from);
+  const sales=days.map(x=>baseSales(x,store));
+  const exp=days.map(x=>expectedSales(x,store));
+  const loads=days.map(baseLoad);
+  const tS=sales.reduce((a,b)=>a+b,0), tE=exp.reduce((a,b)=>a+b,0), tL=loads.reduce((a,b)=>a+b,0);
+  const pS=days.reduce((a,x)=>a+baseSales(addD(x,-364),store),0);
+  const pE=days.reduce((a,x)=>a+expectedSales(addD(x,-364),store),0);
+  return {days,sales,exp,loads,totSales:tS,totExp:tE,totPax:tL,
+    gapPct:tE>0?(tS-tE)/tE*100:0,
+    ourYoY:pS>0?(tS/pS-1)*100:0, mktYoY:pE>0?(tE/pE-1)*100:0,
+    spendPerPax:tL>0?tS/tL:0};
+}
+const inWin=(o,from,to)=>!(o.to<from||o.from>to);
+const contentFor=(store,from,to)=>({
+  camp:DATA.camp.filter(o=>o.store===store&&inWin(o,from,to)),
+  promo:DATA.promo.filter(o=>o.store===store&&inWin(o,from,to)),
+  note_rows:DATA.note.filter(o=>o.store===store&&o.date>=from&&o.date<=to),
+  move:DATA.move.filter(o=>o.store===store&&o.date>=from&&o.date<=to)
+});
+
+/* ---- campaigns landing ---- */
+function renderSnapshots(){
+  const kb=Math.round(storageUsed()/1024);
+  const cards=SNAPS.map(s=>{
+    const ph=s.photos&&s.photos[0];
+    return `<div class="acard" data-snap="${s.id}">
+      <div class="thumb">${ph?`<img src="${ph.src}">`:`<span class="none">No photos yet</span>`}
+        ${s.photos&&s.photos.length>1?`<span class="cnt">${s.photos.length} photos</span>`:""}</div>
+      <div class="meta">
+        <div class="nm">${esc(s.name)}</div>
+        <div class="dt">${s.store} · ${fmtD(s.from)} – ${fmtD(s.to)} ${parse(s.to).getUTCFullYear()}</div>
+        <div class="kpi">
+          <span><i>${NAMES.sales}</i><b>${money(s.m.totSales)}</b></span>
+          <span><i>vs market</i><b style="color:${s.m.gapPct>=0?"var(--pos)":"var(--neg)"}">${s.m.gapPct>=0?"+":""}${s.m.gapPct.toFixed(1)}%</b></span>
+        </div></div></div>`;
+  }).join("");
+  document.getElementById("pgSnapshots").innerHTML=`<div class="arch">
+    <div style="display:flex;align-items:flex-start;gap:16px;margin-bottom:22px">
+      <div style="flex:1">
+        <h2>Campaign snapshots</h2>
+        <div class="lede" style="margin:0">A trading period frozen with its numbers, its artwork and the story behind it.
+          ${SNAPS.length} saved · ${kb} KB of roughly 5,000 KB used.</div>
+      </div>
+      <button class="btn pri" id="newSnap" style="flex:none">＋ New snapshot</button>
+    </div>
+    ${SNAPS.length?`<div class="agrid">${cards}</div>`
+      :`<div class="aempty">Nothing here yet.<br><br>A snapshot pins a named period — Lunar New Year, Golden Week, July 4 —
+        together with what ran, what it returned, the photos from the floor and what you'd do differently.</div>`}
+  </div>`;
+  document.getElementById("newSnap").onclick=()=>{ startDraft(); go("builder"); };
+}
+document.getElementById("pgSnapshots").addEventListener("click",e=>{
+  const c=e.target.closest("[data-snap]"); if(!c) return;
+  CUR_REPORT=c.dataset.snap; go("report");
+});
+
+/* ---- builder ---- */
+function startDraft(existing){
+  DRAFT = existing ? JSON.parse(JSON.stringify(existing)) : {
+    id:uid("s"), name:"", store:S.store, periodId:null,
+    from:S.from, to:S.to, objective:"", ran:"", worked:"", change:"",
+    photos:[], created:new Date().toISOString()
+  };
+}
+function renderBuilder(){
+  const d=DRAFT;
+  const m=metricsFor(d.store,d.from,d.to);
+  const c=contentFor(d.store,d.from,d.to);
+  const chips=PERIODS.map(pd=>
+    `<button class="pchip" data-pd="${pd.id}" aria-pressed="${d.periodId===pd.id}">
+      <span class="pd" style="background:${MKT_COLOR[pd.mkt]||"var(--accent)"}"></span>${esc(pd.name)}</button>`).join("");
+  const listOf=(arr,col,fmt)=> arr.length
+    ? `<ul class="autolist">${arr.map(o=>`<li><span class="sq" style="background:${col}"></span>${fmt(o)}</li>`).join("")}</ul>`
+    : `<ul class="autolist"><li class="none">Nothing in this window.</li></ul>`;
+
+  document.getElementById("pgBuilder").innerHTML=`<div class="bld">
+    <div class="bld-h"><button class="btn" data-x="back">← Snapshots</button></div>
+    <h2>${d.name?esc(d.name):"New campaign snapshot"}</h2>
+    <div class="lede">Pick the window, then add the context the numbers can't carry.</div>
+
+    <div class="sect">
+      <h4>Period</h4>
+      <div class="hint">Named windows shift between years — Lunar New Year 2025 and 2026 are three weeks apart,
+        so dates alone won't line them up. Pick the occasion, not the dates.</div>
+      <div class="periodbar" style="margin-bottom:14px">${chips}
+        <button class="pchip" data-pd="custom" aria-pressed="${!d.periodId}">Custom</button></div>
+      <div class="row"><label>Name</label>
+        <input type="text" data-d="name" value="${esc(d.name)}" placeholder="Lunar New Year 2026 — LAX TBIT"></div>
+      <div class="two">
+        <div class="row"><label>Store</label><select data-d="store">
+          ${[["LAX","LAX TBIT"],["SFOA","SFO Terminal A"],["SFOG","SFO Terminal G"]].map(([v,l])=>
+            `<option value="${v}" ${d.store===v?"selected":""}>${l}</option>`).join("")}</select></div>
+        <div></div>
+      </div>
+      <div class="two">
+        <div class="row"><label>From</label><input type="date" data-d="from" value="${d.from}"></div>
+        <div class="row"><label>To</label><input type="date" data-d="to" value="${d.to}"></div>
+      </div>
+    </div>
+
+    <div class="sect">
+      <h4>What the numbers say</h4>
+      <div class="hint">Pulled from the Timeline for this window and frozen when you save.</div>
+      <div class="kread">
+        <div><div class="k">${NAMES.sales}</div><div class="v">${money(m.totSales)}</div>
+          <div class="s">${m.ourYoY>=0?"+":""}${m.ourYoY.toFixed(1)}% YoY</div></div>
+        <div><div class="k">${NAMES.market}</div><div class="v">${money(m.totExp)}</div>
+          <div class="s">${m.mktYoY>=0?"+":""}${m.mktYoY.toFixed(1)}% YoY</div></div>
+        <div><div class="k">Vs market</div>
+          <div class="v" style="color:${m.gapPct>=0?"var(--pos)":"var(--neg)"}">${m.gapPct>=0?"+":""}${m.gapPct.toFixed(1)}%</div>
+          <div class="s">${(m.ourYoY-m.mktYoY)>=0?"+":""}${(m.ourYoY-m.mktYoY).toFixed(1)} pts ahead</div></div>
+        <div><div class="k">${NAMES.loads}</div><div class="v">${kk(m.totPax)}</div>
+          <div class="s">$${m.spendPerPax.toFixed(2)} per pax</div></div>
+      </div>
+    </div>
+
+    <div class="sect">
+      <h4>What ran</h4>
+      <div class="hint">Picked up automatically from the Timeline. Add anything it doesn't know about below.</div>
+      <div class="row"><label>${NAMES.camp}</label>
+        ${listOf(c.camp,"#2F6FD0",o=>`${esc(o.name)}<span class="m">${esc(o.type||"")}${o.spend?" · "+money(o.spend):""}</span>`)}</div>
+      <div class="row"><label>${NAMES.promo}</label>
+        ${listOf(c.promo,"#1D9E75",o=>`${esc(o.name)}<span class="m">${esc(o.cat||"")}</span>`)}</div>
+      <div class="row"><label>Anything else we ran</label>
+        <textarea data-d="ran" placeholder="Staffing, sampling hours, a gondola we rebuilt mid-period, a late-arriving fixture.">${esc(d.ran)}</textarea></div>
+    </div>
+
+    <div class="sect">
+      <h4>The story</h4>
+      <div class="hint">This is the part an executive actually reads. Keep it plain.</div>
+      <div class="row"><label>What we set out to do</label>
+        <textarea data-d="objective" placeholder="Capture the Chinese outbound wave with a liquor-led offer and a front-of-store beauty activation.">${esc(d.objective)}</textarea></div>
+      <div class="row"><label>What worked</label>
+        <textarea data-d="worked" placeholder="Which mechanic pulled, which fixture converted, which day surprised us.">${esc(d.worked)}</textarea></div>
+      <div class="row"><label>What we'd change</label>
+        <textarea data-d="change" placeholder="Honest read. This is what makes the wins credible next time.">${esc(d.change)}</textarea></div>
+    </div>
+
+    <div class="sect">
+      <h4>Campaign art &amp; floor photos</h4>
+      <div class="hint">Creative, window sets, fixture builds, the queue at 7pm. Images are resized on the way in.</div>
+      <div class="drop" id="drop">Tap to add images</div>
+      <input type="file" id="fin" accept="image/*" multiple style="display:none">
+      <div class="thumbs" id="thumbs"></div>
+    </div>
+
+    ${(c.note_rows.length||c.move.length)?`<div class="sect">
+      <h4>From the floor</h4>
+      <div class="hint">${NAMES.note} and ${NAMES.move} logged in this window. They travel with the snapshot.</div>
+      ${c.note_rows.length?listOf(c.note_rows,"#C4761F",o=>`${esc(o.who)} — ${esc(o.text.slice(0,90))}<span class="m">${fmtD(o.date)}</span>`):""}
+      ${c.move.length?`<div style="height:9px"></div>`+listOf(c.move,"#C0392B",o=>`${esc(o.kind)} ${esc(o.flt)}<span class="m">${fmtD(o.date)}</span>`):""}
+    </div>`:""}
+
+    <div class="bld-ft">
+      <button class="btn" data-x="back2">Cancel</button>
+      <button class="btn pri" data-x="save">Save snapshot</button>
+    </div>
+  </div>`;
+
+  const B=document.getElementById("pgBuilder");
+  B.querySelectorAll("[data-d]").forEach(el=>{
+    el.oninput=()=>{ DRAFT[el.dataset.d]=el.value; };
+    if(el.dataset.d==="from"||el.dataset.d==="to"||el.dataset.d==="store")
+      el.onchange=()=>{ DRAFT[el.dataset.d]=el.value; DRAFT.periodId=null; renderBuilder(); };
+  });
+  B.querySelector(".periodbar").onclick=ev=>{
+    const b=ev.target.closest("[data-pd]"); if(!b) return;
+    if(b.dataset.pd==="custom"){ DRAFT.periodId=null; renderBuilder(); return; }
+    const pd=PERIODS.find(x=>x.id===b.dataset.pd); if(!pd) return;
+    DRAFT.periodId=pd.id; DRAFT.from=pd.from; DRAFT.to=pd.to;
+    if(!DRAFT.name) DRAFT.name=pd.name+" — "+DRAFT.store;
+    renderBuilder();
+  };
+  const fin=B.querySelector("#fin");
+  B.querySelector("#drop").onclick=()=>fin.click();
+  fin.onchange=async()=>{
+    const dz=B.querySelector("#drop"), was=dz.textContent;
+    dz.textContent="Resizing…";
+    for(const f of Array.from(fin.files).slice(0,12)){
+      try{ DRAFT.photos.push({src:await shrinkImage(f), cap:f.name.replace(/\.[^.]+$/,"").slice(0,60)}); }catch(err){}
+    }
+    dz.textContent=was; fin.value=""; drawThumbs();
+  };
+  function drawThumbs(){
+    B.querySelector("#thumbs").innerHTML=DRAFT.photos.map((p,i)=>
+      `<div class="t"><span class="x" data-rm="${i}">×</span><img src="${p.src}">
+       <input type="text" data-cap="${i}" value="${esc(p.cap)}" placeholder="Caption"></div>`).join("");
+  }
+  drawThumbs();
+  B.querySelector("#thumbs").onclick=ev=>{
+    const x=ev.target.closest("[data-rm]"); if(!x) return;
+    DRAFT.photos.splice(+x.dataset.rm,1); drawThumbs();
+  };
+  B.querySelector("#thumbs").oninput=ev=>{
+    const cp=ev.target.closest("[data-cap]"); if(!cp) return;
+    DRAFT.photos[+cp.dataset.cap].cap=cp.value;
+  };
+  B.querySelector('[data-x="back"]').onclick=()=>goHash("snapshots",true);
+  B.querySelector('[data-x="back2"]').onclick=()=>goHash("snapshots",true);
+  B.querySelector('[data-x="save"]').onclick=()=>{
+    if(!DRAFT.name.trim()){ alert("Give it a name first."); return; }
+    const mm=metricsFor(DRAFT.store,DRAFT.from,DRAFT.to);
+    const cc=contentFor(DRAFT.store,DRAFT.from,DRAFT.to);
+    const rec=Object.assign({},DRAFT,{m:mm},cc);
+    SNAPS=SNAPS.filter(x=>x.id!==rec.id); SNAPS.unshift(rec);
+    if(saveSnaps()){ CUR_REPORT=rec.id; go("report"); }
+    else SNAPS=SNAPS.filter(x=>x.id!==rec.id);
+  };
+}
+
+/* ---- report ---- */
+function miniChart(s){
+  const W=820,H=200,L=54,R=16,n=s.m.days.length;
+  const cw=(W-L-R)/n, cx=i=>L+i*cw+cw/2;
+  const max=Math.max(...s.m.sales,...s.m.exp)*1.14;
+  const y=v=>H-22-(H-40)*(v/max);
+  let g="";
+  s.m.days.forEach((d,i)=>{
+    if(HOLIDAYS[d]) g+=`<rect x="${L+i*cw}" y="0" width="${cw}" height="${H-18}" fill="rgba(140,109,63,.13)"/>`;
+    else if(isWknd(d)) g+=`<rect x="${L+i*cw}" y="0" width="${cw}" height="${H-18}" fill="rgba(28,25,23,.045)"/>`;
+  });
+  for(let i=0;i<=3;i++){
+    const v=max*i/3,yy=y(v);
+    g+=`<line x1="${L}" y1="${yy}" x2="${W-R}" y2="${yy}" stroke="#E5DDD5"/>`;
+    g+=`<text x="${L-6}" y="${yy+3}" text-anchor="end" font-size="9.5" font-family="monospace" fill="#7A736A">$${kk(v)}</text>`;
+  }
+  s.m.sales.forEach((v,i)=>{
+    const w=Math.max(2,cw*.62);
+    g+=`<rect x="${cx(i)-w/2}" y="${y(v)}" width="${w}" height="${H-22-y(v)}" fill="#8C6D3F" opacity="${isWknd(s.m.days[i])?1:.68}" rx="1"/>`;
+  });
+  g+=`<path d="${s.m.exp.map((v,i)=>(i?"L":"M")+cx(i)+","+y(v)).join("")}" fill="none" stroke="#7A736A" stroke-width="1.6" stroke-dasharray="6 3"/>`;
+  s.m.days.forEach((d,i)=>{
+    if(n<46 || parse(d).getUTCDate()%5===0)
+      g+=`<text x="${cx(i)}" y="${H-6}" text-anchor="middle" font-size="8.5" font-family="monospace" fill="#7A736A">${parse(d).getUTCDate()}</text>`;
+  });
+  return `<div class="rchart"><svg viewBox="0 0 ${W} ${H}" style="width:100%">${g}</svg>
+    <div class="p-leg" style="padding:6px 10px 2px">
+      ${kSq("#8C6D3F",NAMES.sales)}${kDsh("#7A736A",NAMES.market)}${kSq("#EDE7E0","Weekend or holiday")}</div></div>`;
+}
+function renderReport(){
+  const s=SNAPS.find(x=>x.id===CUR_REPORT);
+  if(!s){ go("snapshots"); return; }
+  const gapCol=s.m.gapPct>=0?"var(--pos)":"var(--neg)";
+  const out=s.m.ourYoY-s.m.mktYoY;
+  const photos=(s.photos||[]).map(p=>
+    `<figure><img src="${p.src}">${p.cap?`<figcaption>${esc(p.cap)}</figcaption>`:""}</figure>`).join("");
+  const li=(t,m,d)=>`<li><span class="t">${esc(t)}</span> <span class="m">${esc(m)}</span>${d?`<br>${esc(d)}`:""}</li>`;
+  const para=(t,v)=>v&&v.trim()?`<h3>${t}</h3><p>${esc(v)}</p>`:"";
+
+  document.getElementById("pgReport").innerHTML=`<div class="rep">
+    <div class="rep-bar">
+      <button class="btn" data-x="back">← Snapshots</button>
+      <button class="btn" data-x="edit">Edit</button>
+      <button class="btn" data-x="print">Print / PDF</button>
+      <div style="flex:1"></div>
+      <button class="btn" data-x="del" style="color:var(--neg)">Delete</button>
+    </div>
+    <div class="rep-bd">
+      <h1>${esc(s.name)}</h1>
+      <div class="rsub">${s.store} · ${fmtD(s.from)} – ${fmtD(s.to)} ${parse(s.to).getUTCFullYear()} ·
+        ${s.m.days.length} days · Horizons snapshot, ${new Date(s.created).toLocaleDateString()}</div>
+
+      <div class="kpis">
+        <div><div class="k">${NAMES.sales}</div><div class="v">${money(s.m.totSales)}</div>
+          <div class="s">${s.m.ourYoY>=0?"+":""}${s.m.ourYoY.toFixed(1)}% year on year</div></div>
+        <div><div class="k">${NAMES.market}</div><div class="v">${money(s.m.totExp)}</div>
+          <div class="s">${s.m.mktYoY>=0?"+":""}${s.m.mktYoY.toFixed(1)}% year on year</div></div>
+        <div><div class="k">Vs market</div><div class="v" style="color:${gapCol}">${s.m.gapPct>=0?"+":""}${s.m.gapPct.toFixed(1)}%</div>
+          <div class="s">${out>=0?"+":""}${out.toFixed(1)} pts of outperformance</div></div>
+        <div><div class="k">${NAMES.loads}</div><div class="v">${kk(s.m.totPax)}</div>
+          <div class="s">$${s.m.spendPerPax.toFixed(2)} per pax</div></div>
+      </div>
+
+      ${para("What we set out to do",s.objective)}
+      <h3>How it traded</h3>
+      ${miniChart(s)}
+      ${para("What worked",s.worked)}
+      ${para("What we'd change",s.change)}
+
+      ${photos?`<h3>Campaign art &amp; floor photos</h3><div class="gal">${photos}</div>`:""}
+
+      ${s.camp.length?`<h3>${NAMES.camp}</h3><ul class="rlist">${
+        s.camp.map(c=>li(c.name,`${c.type||""} · ${fmtD(c.from)}–${fmtD(c.to)}${c.spend?" · "+money(c.spend):""}`)).join("")}</ul>`:""}
+      ${s.promo.length?`<h3>${NAMES.promo}</h3><ul class="rlist">${
+        s.promo.map(pp=>li(pp.name,`${pp.cat||""} · ${fmtD(pp.from)}–${fmtD(pp.to)}`)).join("")}</ul>`:""}
+      ${para("Anything else we ran",s.ran)}
+      ${s.note_rows.length?`<h3>${NAMES.note}</h3><ul class="rlist">${
+        s.note_rows.map(n=>li(n.who,`${fmtD(n.date)} · ${n.tag||""}`,n.text)).join("")}</ul>`:""}
+      ${s.move.length?`<h3>${NAMES.move}</h3><ul class="rlist">${
+        s.move.map(mv=>li(`${mv.kind} — ${mv.flt}`,fmtD(mv.date),mv.detail)).join("")}</ul>`:""}
+
+      <p style="margin-top:34px;padding-top:12px;border-top:1px solid var(--rule);font-size:11.5px;color:var(--ink3)">
+        ${NAMES.market} is modelled from flight loads, source-market mix, currency and the calendar.
+        Coefficients are not yet fitted against real sales history — figures are indicative.</p>
+    </div></div>`;
+
+  const R=document.getElementById("pgReport");
+  R.querySelector('[data-x="back"]').onclick=()=>goHash("snapshots",true);
+  R.querySelector('[data-x="print"]').onclick=()=>print();
+  R.querySelector('[data-x="edit"]').onclick=()=>{ startDraft(s); go("builder"); };
+  R.querySelector('[data-x="del"]').onclick=()=>{
+    if(!confirm("Delete this snapshot and its photos?")) return;
+    SNAPS=SNAPS.filter(x=>x.id!==s.id); saveSnaps(); go("snapshots");
+  };
+}
+
+/* ---- home ---- */
+function renderHome(){
+  const realN = FLIGHTS.length;
+  const camps = DATA.camp.length + DATA.promo.length;
+
+  /* small sketches, drawn from the real thing rather than stock icons */
+  const vizTimeline = (()=>{
+    let g="", n=26;
+    const vals=[38,44,41,52,49,58,63,55,50,47,54,61,72,66,58,54,60,68,79,71,63,59,66,74,84,77];
+    for(let i=0;i<n;i++){
+      const wknd = i%7===0||i%7===6;
+      const x=i*11+4, hgt=vals[i]*0.78;
+      if(wknd) g+=`<rect x="${x-2}" y="0" width="11" height="96" fill="rgba(28,25,23,.045)"/>`;
+      g+=`<rect x="${x}" y="${88-hgt}" width="7" height="${hgt}" rx="1" fill="#8C6D3F" opacity="${wknd?1:.6}"/>`;
+    }
+    const exp=vals.map((v,i)=>`${i?"L":"M"}${i*11+7.5},${88-v*0.78*0.92}`).join("");
+    g+=`<path d="${exp}" fill="none" stroke="#7A736A" stroke-width="1.5" stroke-dasharray="5 3"/>`;
+    g+=`<line x1="0" y1="88" x2="292" y2="88" stroke="#E5DDD5"/>`;
+    return `<svg viewBox="0 0 292 96" preserveAspectRatio="xMidYMid meet">${g}</svg>`;
+  })();
+
+  const vizCampaign = (()=>{
+    const card=(x,y,r,fill,op)=>`<g transform="translate(${x},${y}) rotate(${r})">
+      <rect width="74" height="88" rx="6" fill="#fff" stroke="#E5DDD5"/>
+      <rect x="7" y="7" width="60" height="42" rx="3" fill="${fill}" opacity="${op}"/>
+      <rect x="7" y="56" width="46" height="4.5" rx="2" fill="#D6CCC0"/>
+      <rect x="7" y="65" width="34" height="4.5" rx="2" fill="#E5DDD5"/>
+      <rect x="7" y="76" width="24" height="4.5" rx="2" fill="#8C6D3F" opacity=".55"/></g>`;
+    return `<svg viewBox="0 0 292 96" preserveAspectRatio="xMidYMid meet">
+      ${card(72,6,-7,"#2E7D9A",.5)}${card(112,3,3,"#1D9E75",.5)}${card(152,7,10,"#8C6D3F",.55)}</svg>`;
+  })();
+
+  document.getElementById("pgHome").innerHTML=`<div class="home">
+    <div class="eyebrow">Duty Free Americas</div>
+    <h1>Horizons</h1>
+    <div class="sub">Sales, flight loads, campaigns and currency on one timeline — so a soft week
+      can be explained rather than argued about, and a good one can be proved.</div>
+
+    <div class="paths">
+      <button class="path" data-go="timeline">
+        <div class="viz">${vizTimeline}</div>
+        <h2>Timeline</h2>
+        <div class="pd">Daily trading against what conditions predicted. Read a day down the column,
+          a trend across the row.</div>
+        <ul>
+          <li>${NAMES.sales} with ${NAMES.market.toLowerCase()} overlaid</li>
+          <li>${NAMES.loads} by market, by flight, or averaged</li>
+          <li>${NAMES.camp}, ${NAMES.promo.toLowerCase()} and ${NAMES.fx.toLowerCase()}</li>
+          <li>Calendar spine for weekends, holidays and weekday shifts</li>
+        </ul>
+        <span class="cta">Open the timeline →</span>
+        <div class="stat">${realN} flights loaded · 3 stores · ${camps} campaigns and promos tracked</div>
+      </button>
+
+      <button class="path" data-go="snapshots">
+        <div class="viz">${vizCampaign}</div>
+        <h2>Snapshots</h2>
+        <div class="pd">Freeze a trading period with its numbers, its artwork and the story behind it.
+          Print it, or come back and add to it as the period runs.</div>
+        <ul>
+          <li>Named windows — Lunar New Year, Golden Week, Chuseok</li>
+          <li>Campaign art and floor photos with captions</li>
+          <li>What we set out to do, what worked, what we'd change</li>
+          <li>Print-ready report with the results built in</li>
+        </ul>
+        <span class="cta">${SNAPS.length?"Open snapshots":"Build your first snapshot"} →</span>
+        <div class="stat">${SNAPS.length} snapshot${SNAPS.length===1?"":"s"} saved${SNAPS.length?" · latest "+esc(SNAPS[0].name):""}</div>
+      </button>
+    </div>
+
+    <div class="foot">Mockup. Flight loads for Jun 28 – Jul 4 are real; sales and currency are modelled
+      until the live files are wired in. Notes, photos and snapshots are held on this device until the DFA network build.</div>
+  </div>`;
+}
+document.getElementById("pgHome").addEventListener("click",e=>{
+  const b=e.target.closest("[data-go]"); if(!b) return;
+  goHash(b.dataset.go,true);
+});
+
+/* ---- routing ---- */
+function go(pg){
+  PG=pg;
+  document.body.className = pg==="timeline" ? "" : "pg-"+pg;
+  const CRUMB={home:"DFA",timeline:"Timeline",snapshots:"Snapshots",builder:"Snapshots",report:"Snapshots"};
+  document.getElementById("crumb").textContent = CRUMB[pg]||"DFA";
+  if(pg==="home") renderHome();
+  else if(pg==="snapshots") renderSnapshots();
+  else if(pg==="builder") renderBuilder();
+  else if(pg==="report") renderReport();
+  else render();
+  const sc = pg==="timeline" ? document.getElementById("main") : document.getElementById("pg"+pg[0].toUpperCase()+pg.slice(1));
+  if(sc) sc.scrollTop=0;
+}
+document.getElementById("homeBtn").addEventListener("click",()=>goHash("home",true));
+document.getElementById("backHome").addEventListener("click",()=>goHash("home",true));
+
+/* Deep links, so a launcher page can drop someone straight into a view:
+   horizons.html#timeline  ·  horizons.html#snapshots
+   Also makes the browser back button behave. */
+const HASHABLE = {home:1, timeline:1, snapshots:1};
+function goHash(pg, push){
+  go(pg);
+  if(push && HASHABLE[pg]){
+    const want = pg==="home" ? " " : "#"+pg;
+    if(location.hash !== want) history.pushState({pg}, "", pg==="home" ? location.pathname : want);
+  }
+}
+function fromHash(){
+  const k = (location.hash||"").replace(/^#/,"").toLowerCase();
+  return HASHABLE[k] ? k : "home";
+}
+addEventListener("popstate",()=>go(fromHash()));
+
+let rt; addEventListener("resize",()=>{clearTimeout(rt);rt=setTimeout(()=>{ if(PG==="timeline") render(); },120);});
+go(fromHash());
+</script>
+</body>
+</html>
