@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>DFA Tracker — Space Value &amp; Promo Results</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{
+  --bg:#FAFAF8; --panel:#F5F0EA; --panelHi:#FFFFFF; --cream:#F5EFE3;
+  --rule:#E5DDD5; --rule2:#D6CCC0;
+  --ink:#1C1917; --ink2:#5F574E; --ink3:#7A736A;
+  --accent:#8C6D3F; --pos:#1D7A5C; --neg:#B83A2E;
+  --disp:"Cormorant Garamond","Cambria",Georgia,serif;
+  --body:"Jost",-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+  --mono:"SF Mono",Menlo,Consolas,"Roboto Mono",monospace;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:13px;line-height:1.45}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+select,input[type=number],input[type=text]{background:var(--panelHi);border:1px solid var(--rule2);color:var(--ink);border-radius:5px;padding:5px 8px;font:inherit;font-size:12.5px}
+h2,h3{font-family:var(--disp);font-weight:700;margin:0}
+.mut{color:var(--ink3)}
+
+header{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:9px 16px;border-bottom:1px solid var(--rule);background:var(--panelHi);position:sticky;top:0;z-index:5}
+.brand{font-family:var(--disp);font-weight:700;font-size:19px;cursor:pointer;padding:3px 6px;border-radius:6px}
+.brand:hover{background:var(--cream)}
+.brand small{font-family:var(--body);font-size:10px;letter-spacing:.14em;color:var(--accent);font-weight:600;margin-left:8px}
+.seg{display:flex;border:1px solid var(--rule2);border-radius:6px;overflow:hidden;background:var(--bg)}
+.seg button{font-size:12px;font-weight:500;padding:6px 12px;color:var(--ink3);border-right:1px solid var(--rule2);white-space:nowrap}
+.seg button:last-child{border-right:none}
+.seg button[aria-pressed="true"]{background:var(--ink);color:#fff;font-weight:600}
+.status{margin-left:auto;font-size:11px;color:var(--ink3);border:1px solid var(--rule2);padding:4px 9px;border-radius:5px;cursor:pointer}
+.status.bad{border-color:var(--neg);color:var(--neg)}
+
+main{padding:16px;max-width:1320px;margin:0 auto}
+.page{display:none}
+.page.on{display:block}
+
+.bar{display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:8px 12px;background:var(--panelHi);border:1px solid var(--rule);border-radius:8px;margin-bottom:12px}
+.fld{display:flex;align-items:center;gap:6px}
+.fld label{font-size:11px;color:var(--ink3);font-weight:600}
+
+.kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-bottom:12px}
+.kpi{background:var(--panelHi);border:1px solid var(--rule);border-radius:8px;padding:10px 12px}
+.kpi .k{font-size:11px;color:var(--ink3)}
+.kpi .v{font-family:var(--disp);font-size:24px;font-weight:700;margin-top:2px}
+.kpi .s{font-size:11px;color:var(--ink3)}
+.kpi.hi{background:var(--cream);border-color:var(--accent)}
+
+.panel{background:var(--panelHi);border:1px solid var(--rule);border-radius:8px;padding:12px;margin-bottom:12px}
+.ph{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.ph h3{font-size:15px}
+.ph .sp{flex:1}
+.tm{position:relative;width:100%;height:470px;background:var(--panel);border-radius:6px;overflow:hidden}
+.blk{position:absolute;border:2px solid var(--panelHi);border-radius:3px;padding:5px 7px;overflow:hidden;cursor:pointer;color:#1C1917}
+.blk:hover{outline:2px solid var(--ink);outline-offset:-2px;z-index:2}
+.blk.sel{outline:3px solid var(--accent);outline-offset:-3px;z-index:3}
+.blk.inc,.mblk.inc{outline:2px dashed var(--ink3);outline-offset:-3px}
+.blk .n{font-weight:600;font-size:12.5px;line-height:1.2}
+.blk .m{font-family:var(--mono);font-size:11px;line-height:1.35;opacity:.9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mapbox{position:absolute;inset:0;background:var(--panel)}
+.mapwall{position:absolute;inset:12px;border:2px dashed var(--rule2);border-radius:6px}
+.mapnote{position:absolute;left:20px;bottom:14px;font-size:11px;color:var(--ink3)}
+.mblk{position:absolute;transform:translate(-50%,-50%);min-width:116px;max-width:170px;border:2px solid var(--panelHi);border-radius:3px;padding:4px 6px;cursor:pointer;color:#1C1917}
+.mblk:hover{outline:2px solid var(--ink);outline-offset:-2px;z-index:2}
+.mblk.sel{outline:3px solid var(--accent);outline-offset:-3px;z-index:3}
+.mblk .n{font-weight:600;font-size:11px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mblk .m{font-family:var(--mono);font-size:10px;line-height:1.3;white-space:nowrap}
+.legend{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--ink3);margin-top:8px;flex-wrap:wrap}
+.ramp{width:120px;height:8px;border-radius:4px}
+
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th{font-weight:600;font-size:11px;color:var(--ink3);text-align:left;padding:6px 8px;border-bottom:1px solid var(--rule2);cursor:pointer;white-space:nowrap}
+th.r,td.r{text-align:right}
+td{padding:7px 8px;border-bottom:1px solid var(--rule)}
+tr.row{cursor:pointer}
+tr.row:hover td{background:var(--cream)}
+tr.row.sel td{background:var(--cream);font-weight:600}
+.scroll{overflow-x:auto}
+.binp{width:92px;text-align:right;font-family:var(--mono);font-size:12px;padding:3px 6px}
+
+.cmp{width:100%;min-width:680px;table-layout:fixed}
+.cmp thead th{padding:8px;vertical-align:top;cursor:default}
+.cmp .lab{width:26%;color:var(--ink3);font-weight:400;font-size:12px}
+.cmp td.v{font-family:var(--mono);text-align:right}
+.cmp td.v.best{font-weight:700;color:var(--pos)}
+.cmp .colh{border:1px solid var(--rule);border-radius:8px;padding:8px;background:var(--panel);cursor:pointer}
+.cmp .colh.act{border-color:var(--accent);background:var(--cream)}
+.cmp .colh select{width:100%;margin-bottom:6px}
+.cmp .colh .pk{font-size:11px;color:var(--ink3);margin-bottom:2px}
+
+.cards3{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin:18px 0}
+.home-card{background:var(--panelHi);border:1px solid var(--rule);border-radius:10px;padding:16px;text-align:left;display:block;width:100%}
+.home-card:hover{border-color:var(--accent);background:var(--cream)}
+.home-card h3{font-size:20px;margin-bottom:6px}
+.home-card p{margin:0;color:var(--ink2)}
+.chip{border:1px solid var(--rule2);border-radius:12px;padding:3px 10px;font-size:11px;color:var(--ink2);background:var(--panelHi);display:inline-block;margin:0 6px 6px 0}
+
+.bars{display:flex;align-items:flex-end;gap:18px;height:170px;padding:0 10px;border-bottom:1px solid var(--rule2);position:relative}
+.bars .b{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%}
+.bars .fill{width:100%;border-radius:3px 3px 0 0}
+.bars .lbl{font-size:11px;color:var(--ink3);position:absolute;bottom:-22px}
+.bars .val{font-family:var(--mono);font-size:12px;margin-bottom:3px}
+.dl{display:grid;grid-template-columns:1fr auto;gap:5px 10px;font-size:12.5px;margin:34px 0 0}
+.dl dt{color:var(--ink3)}
+.dl dd{margin:0;text-align:right;font-family:var(--mono)}
+.note{border-left:3px solid var(--accent);background:var(--cream);padding:10px 12px;font-size:12.5px;margin-top:12px}
+.ghost{border:1px dashed var(--rule2);border-radius:6px;padding:10px 12px;color:var(--ink3);font-size:12px}
+.warn{border-left:3px solid var(--neg);background:#FDECEA;color:#7A1F16;padding:10px 12px;font-size:12.5px;margin-bottom:12px}
+.ok{color:var(--pos)}
+
+.ovl{position:fixed;inset:0;background:rgba(28,25,23,.5);display:none;align-items:center;justify-content:center;z-index:50;padding:16px}
+.ovl.on{display:flex}
+.ovl .bx{background:var(--panelHi);border-radius:10px;max-width:560px;width:100%;padding:20px 22px;max-height:84vh;overflow:auto}
+.spin{width:38px;height:38px;border:4px solid var(--rule2);border-top-color:var(--accent);border-radius:50%;animation:sp .8s linear infinite;margin:0 auto 12px}
+@keyframes sp{to{transform:rotate(360deg)}}
+@media (max-width:860px){
+  .kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .tm{height:380px}
+  .status{margin-left:0}
+}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand" id="brand">Canopy<small>TRACKER</small></div>
+  <div class="seg" id="nav">
+    <button data-pg="home" aria-pressed="true">Home</button>
+    <button data-pg="spaces" aria-pressed="false">Space value</button>
+    <button data-pg="promos" aria-pressed="false">Promo results</button>
+  </div>
+  <button class="status" id="status">Loading…</button>
+</header>
+
+<main>
+<section class="page on" id="pg-home">
+  <h2 style="font-size:24px">Space value and promo results</h2>
+  <p class="mut" style="margin:4px 0 0">Reads the same files as Canopy: the master workbook, the monthly sales reports, the margin sheet, and the Media Tracker's saved data.</p>
+  <div class="cards3">
+    <button class="home-card" data-go="spaces"><h3>Space value</h3><p>Sales, uplift, margin, and rent for every space. Compare spaces and periods side by side.</p></button>
+    <button class="home-card" data-go="promos"><h3>Promo results</h3><p>Did the promo work? Brand share of store sales in promo months against the months around them.</p></button>
+    <button class="home-card" onclick="window.open('Horizons.html#timeline','_blank')"><h3>Horizons</h3><p>Daily sales against traffic and the market, with campaigns and promos layered on.</p></button>
+  </div>
+  <div class="panel"><h3 style="font-size:15px">Data</h3><div id="srcList" style="margin-top:8px"></div></div>
+</section>
+
+<section class="page" id="pg-spaces">
+  <div id="spWarn"></div>
+  <div class="bar">
+    <div class="fld"><label>Store</label><select id="storeSel"></select></div>
+    <div class="fld"><label>Period</label><select id="periodSel"></select><span class="mut" id="periodYear"></span></div>
+    <div class="seg" id="focusSeg">
+      <button data-v="focus" aria-pressed="true">Focus spaces</button>
+      <button data-v="all" aria-pressed="false">All spaces</button>
+    </div>
+    <span class="mut" id="focusNote"></span>
+  </div>
+  <div class="kpis" id="kpis"></div>
+  <div class="legend" style="margin:-4px 0 12px">Profit is margin plus rent. Sales are the sales of the brands booked into a space, not sales caused by it; a brand in several spaces is split evenly between them. Margin counts only brands on the margin sheet.</div>
+  <div class="panel">
+    <div class="ph">
+      <h3>Spaces</h3>
+      <select id="catSel" aria-label="Space category"></select>
+      <div class="sp"></div>
+      <div class="fld"><label>Size by</label>
+        <div class="seg" id="sizeSeg">
+          <button data-v="sqft" aria-pressed="true">Square feet</button>
+          <button data-v="value" aria-pressed="false">Profit</button>
+        </div>
+      </div>
+      <div class="seg" id="viewSeg">
+        <button data-v="blocks" aria-pressed="true">Blocks</button>
+        <button data-v="map" aria-pressed="false">Map view</button>
+      </div>
+    </div>
+    <div class="tm" id="tm"></div>
+    <div class="legend" id="legend"></div>
+    <div class="legend" id="skip"></div>
+  </div>
+  <div class="panel" id="compare"></div>
+  <div class="panel">
+    <div class="ph"><h3>Mix matrix</h3><div class="sp"></div>
+      <div class="fld"><label>Up axis</label>
+        <div class="seg" id="ySeg"><button data-v="up" aria-pressed="true">Sales uplift</button><button data-v="mg" aria-pressed="false">Margin $</button></div>
+      </div>
+    </div>
+    <div id="matrix"></div>
+    <div class="legend" id="mlegend"></div>
+  </div>
+  <div class="panel scroll">
+    <div class="ph"><h3>Scorecard</h3><span class="mut">Click a column to sort. Type a baseline to set it.</span></div>
+    <table id="score"></table>
+  </div>
+</section>
+
+<section class="page" id="pg-promos">
+  <div class="bar">
+    <div class="fld"><label>Store</label><select id="pStoreSel"></select></div>
+    <div class="fld"><label>Category</label><select id="pCatSel"><option value="all">All</option><option value="SWT Promos">SWT</option><option value="Beauty Promos">Beauty</option><option value="FG Promos">Food &amp; Gifts</option></select></div>
+    <span class="mut" id="pNote"></span>
+  </div>
+  <div class="panel scroll">
+    <div class="ph"><h3>Promos</h3><span class="mut">Share of store sales during promo months against the months without it.</span></div>
+    <table id="ptable"></table>
+  </div>
+  <div class="panel" id="pdetail"></div>
+</section>
+</main>
+
+<div class="ovl on" id="load"><div class="bx" style="text-align:center"><div class="spin"></div><div id="loadMsg">Loading data…</div></div></div>
+<div class="ovl" id="dlg"><div class="bx"><div id="dlgBody"></div><div style="text-align:right;margin-top:14px"><button class="chip" onclick="document.getElementById('dlg').classList.remove('on')">Close</button></div></div></div>
+
+<script>
+/* ============================================================
+   DFA Tracker — reads the same files Canopy reads.
+   Paths below must match the repo. Everything is read-only.
+   ============================================================ */
+var CFG={
+  base:'https://jeffenlow.github.io/dfa_birdseye/',
+  workbook:'Activations/DFA_Master_Template_All_NAM.xlsx',
+  margin:'Sales/Sales_Margin.xlsx',
+  media:'Media/media_data.json',
+  sales:function(code,year,m){return 'Sales/'+code+'_'+year+'-'+String(m+1).padStart(2,'0')+'-full.xlsx'},
+  year:2026
+};
+// The spaces the tracker starts on. Everything else stays loaded and is one
+// click away under "All spaces" — add a line here to bring a space into focus.
+var FOCUS=[
+  {store:'SFO G',id:'G_MAIN_HPP_2'},   // was HPA 5
+  {store:'SFO G',id:'SWT_HPP_1'},      // renamed; no match in the merchant docs
+  {store:'SFO A',id:'CHPP'},
+  {store:'SFO A',id:'CSPP1'}
+];
+var MON=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+var MONU=["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
+var SHEETS={act:'Activations',bfx:'Brand Fixtures',own:'Store Owned',med:'Media Rentals'};
+var PROMO_TABS=['SWT Promos','Beauty Promos','FG Promos'];
+// Optional tab listing the SKUs on each activation. Columns, in any order:
+// MAP ID | STORE | BRAND | SKU | MONTHS (blank = every month the space runs).
+// MONTHS accepts "Jul", "Jul, Aug", "Q3" or "Jul-Sep". The tab is optional;
+// a SKUS column on the Activations or Store Owned tabs works too.
+var SKU_TABS=['Activation SKUs','Activation SKU','SKUs','Space SKUs'];
+
+var SPACES=[],PROMOS=[],MARGIN={},SALES={},TOTALS={},MEDIA_RENT={},MEDIA_ALIAS={},MEDIA_SHARE={},LOADED={sales:[],fail:[]};
+var STORES=[],CATS=[];
+var SAVE=load();
+
+function $(id){return document.getElementById(id)}
+function nk(s){return String(s==null?'':s).toLowerCase().replace(/[^a-z0-9]/g,'')}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function money(v){if(v==null||isNaN(v))return '—';var a=Math.abs(v);var s=a>=1e6?'$'+(a/1e6).toFixed(2)+'M':a>=1000?'$'+Math.round(a/1000)+'k':'$'+Math.round(a);return (v<0?'−':'')+s}
+function pct(v,d){if(v==null||!isFinite(v))return '—';return (v>=0?'+':'−')+Math.abs(v*100).toFixed(d==null?1:d)+'%'}
+function num(v){if(v==null||v==='')return null;var n=parseFloat(String(v).replace(/[^0-9.\-]/g,''));return isNaN(n)?null:n}
+function load(){try{return JSON.parse(localStorage.getItem('dfaTracker')||'{}')}catch(e){return{}}}
+function save(){try{localStorage.setItem('dfaTracker',JSON.stringify(SAVE))}catch(e){}}
+
+/* ---------- fetch ---------- */
+function getBuf(path){return fetch(CFG.base+path,{cache:'no-store'}).then(function(r){if(!r.ok)throw new Error(r.status+' '+path);return r.arrayBuffer()})}
+function getJson(path){return fetch(CFG.base+path,{cache:'no-store'}).then(function(r){if(!r.ok)throw new Error(r.status+' '+path);return r.json()})}
+
+function boot(){
+  $('loadMsg').textContent='Loading the master workbook…';
+  getBuf(CFG.workbook).then(function(ab){
+    parseWorkbook(XLSX.read(new Uint8Array(ab),{type:'array'}));
+    $('loadMsg').textContent='Loading margin, media and sales…';
+    var jobs=[getBuf(CFG.margin).then(parseMargin).catch(function(e){LOADED.fail.push('Sales_Margin.xlsx')}),
+              getJson(CFG.media).then(parseMedia).catch(function(e){LOADED.fail.push('media_data.json')})];
+    ['SFO','LAX'].forEach(function(code){
+      for(var m=0;m<12;m++)(function(code,m){
+        jobs.push(getBuf(CFG.sales(code,CFG.year,m)).then(function(ab){parseSales(XLSX.read(new Uint8Array(ab),{type:'array'}),code,m);LOADED.sales.push(code+' '+MON[m])}).catch(function(){}));
+      })(code,m);
+    });
+    return Promise.all(jobs);
+  }).then(start).catch(function(e){
+    $('load').classList.remove('on');
+    $('status').textContent='Could not load data';$('status').className='status bad';
+    $('spWarn').innerHTML='<div class="warn">Could not load the data files from the repo ('+esc(e.message)+'). If you are opening this file from your computer rather than from the site, the browser blocks the fetch. Put this file in the repo next to index.html and open it from the site.</div>';
+  });
+}
+
+/* ---------- workbook ---------- */
+function rowsOf(wb,name){var ws=wb.Sheets[name];if(!ws)return null;return XLSX.utils.sheet_to_json(ws,{header:1,defval:''})}
+function hdrIdx(rows){for(var i=0;i<Math.min(rows.length,8);i++){var r=rows[i]||[];for(var j=0;j<r.length;j++){var u=String(r[j]).trim().toUpperCase();if(u==='MAP ID'||u==='SCREEN ID')return i}}return 2}
+function colMap(hdr){var o={};hdr.forEach(function(v,i){var u=String(v).trim().toUpperCase().replace(/[.\s_\/]/g,'');if(!o[u])o[u]=i});return o}
+function pickCol(c,names){for(var i=0;i<names.length;i++)if(c[names[i]]!=null)return c[names[i]];return -1}
+
+function zoneCat(zone,src){
+  var z=String(zone||'').toUpperCase();
+  var g= /BEAUTY|COS|FRAG|SKIN|COSMET/.test(z) ? 'beauty'
+       : /SPIRIT|WINE|TOBAC|SWT|HPA|EVP|LIQUOR|CIGAR/.test(z) ? 'swt'
+       : /FOOD|GIFT|\bFG\b|CONFECT|WELLNES/.test(z) ? 'fg' : 'other';
+  if(src==='med')return 'media';
+  if(src==='own')return 'store';
+  return (src==='bfx'?'brand-':'act-')+g;
+}
+var CAT_LABEL={'act-beauty':'Activations - Beauty','act-fg':'Activations - FG','act-swt':'Activations - SWT','act-other':'Activations - other',
+  'brand-beauty':'Brand - Beauty','brand-fg':'Brand - FG','brand-swt':'Brand - SWT','brand-other':'Brand - other','store':'Store owned','media':'Media screens'};
+var CAT_ORDER=['act-beauty','act-fg','act-swt','act-other','brand-swt','brand-beauty','brand-fg','brand-other','store','media'];
+
+function parseWorkbook(wb){
+  var byKey={};
+  Object.keys(SHEETS).forEach(function(src){
+    var rows=rowsOf(wb,SHEETS[src]);if(!rows)return;
+    var hi=hdrIdx(rows),hdr=rows[hi]||[],c=colMap(hdr);
+    var iId=pickCol(c,['MAPID','SCREENID']),iNm=pickCol(c,['SPACENAME','SCREENNAME','NAME']),iSt=pickCol(c,['STORE']),
+        iZn=pickCol(c,['ZONEDEPT','ZONE','DEPT']),iSq=pickCol(c,['SQUAREFT','SQUAREFEET','SQFT','SQUAREFOOTAGE']),
+        iL=pickCol(c,['LEFT','X']),iT=pickCol(c,['TOP','Y']),
+        iRent=pickCol(c,['RENT','MONTHLYRENT','RENTMONTH','RENTALINCOME','RENTPERMONTH']),
+        iDim=pickCol(c,['DIMENSIONS','DIMENSION','SIZE']),iTyp=pickCol(c,['TYPE']),iPl=pickCol(c,['PLAYERID','PLAYER']),
+        iSku=pickCol(c,['SKUS','SKU','SKULIST','SKUPRODUCTGROUP']);
+    var mCol={};
+    for(var j=0;j<hdr.length;j++){var u=String(hdr[j]).trim().toUpperCase();var k=MONU.indexOf(u);if(k>=0&&mCol[k]==null)mCol[k]=j}
+    for(var r=hi+1;r<rows.length;r++){
+      var row=rows[r]||[];
+      var id=String(row[iId]||'').trim(),store=String(row[iSt]||'').trim();
+      if(!id||!store||/^✈/.test(id))continue;
+      var nm0=String(row[iNm]||id).trim()||id;
+      // Media Rentals lists one rentable line (e.g. Totems) plus a row per
+      // physical screen for the tech specs. Group them under the rental line.
+      var key=src==='med'?(src+'|'+store+'|'+nk(nm0)):(src+'|'+store+'|'+id);
+      var sp=byKey[key];
+      if(!sp){
+        sp=byKey[key]={id:id,name:nm0,store:store,zone:String(row[iZn]||'').trim(),specs:[],
+          src:src,media:src==='med',sqft:iSq>=0?num(row[iSq]):null,rentCol:iRent>=0?num(row[iRent]):null,
+          left:iL>=0?num(row[iL]):null,top:iT>=0?num(row[iT]):null,brands:{}};
+        sp.cat=zoneCat(sp.zone,src);
+        SPACES.push(sp);
+      }
+      if(src==='med'){
+        var dim=iDim>=0?String(row[iDim]||'').trim():'',typ=iTyp>=0?String(row[iTyp]||'').trim():'',pl=iPl>=0?String(row[iPl]||'').trim():'';
+        if(!sp.specs.some(function(s){return s.id===id&&s.dim===dim}))sp.specs.push({id:id,dim:dim,type:typ,player:pl});
+        if(nk(id)===nk(nm0))sp.id=id; // the row whose ID matches the name is the rental line
+      }
+      if(iSku>=0&&row[iSku]){
+        var line=String(row[iSku]).trim();
+        if(line)sp.skuLine=(sp.skuLine?sp.skuLine+' | ':'')+line; // applied once brands are known
+      }
+      if(src==='bfx'){ for(var m=0;m<12;m++)addBrand(sp,m,sp.name); }
+      else{
+        for(var m2=0;m2<12;m2++){
+          var ci=mCol[m2];if(ci==null)continue;
+          var b=String(row[ci]||'').trim();
+          if(b)b.split(/\s*[+\/]\s*/).forEach(function(x){addBrand(sp,m2,x)});
+        }
+      }
+    }
+  });
+  // A SKUS cell is either a plain list, or dated segments split by "|":
+  //   "Mar-Apr: SKU A; SKU B | May-Aug: SKU C"
+  // A plain list applies to every month that space runs a brand.
+  SPACES.forEach(function(sp){
+    if(!sp.skuLine)return;
+    sp.skuLine.split(/\s*\|\s*|\n/).forEach(function(seg){
+      seg=seg.trim();if(!seg)return;
+      var lab=null,body=seg,c=seg.indexOf(':');
+      if(c>0){var maybe=monthsFromText(seg.slice(0,c));if(maybe){lab=maybe;body=seg.slice(c+1)}}
+      var skus=splitSkus(body);if(!skus.length)return;
+      var ms=lab||[0,1,2,3,4,5,6,7,8,9,10,11];
+      ms.forEach(function(m){
+        if(!lab&&!(sp.brands[m]||[]).length)return;
+        skus.forEach(function(x){addSku(sp,m,'',x)});
+      });
+    });
+  });
+  SKU_TABS.forEach(function(tab){
+    var rows=rowsOf(wb,tab);if(!rows)return;
+    var hi=-1;
+    for(var i=0;i<8;i++){if((rows[i]||[]).some(function(v){return /^(MAP ID|SKU)$/i.test(String(v).trim())})){hi=i;break}}
+    if(hi<0)return;
+    var c=colMap(rows[hi]||[]);
+    var iId=pickCol(c,['MAPID','SPACEID']),iSt=pickCol(c,['STORE']),iBr=pickCol(c,['BRAND']),
+        iSk=pickCol(c,['SKU','SKUS','SKUPRODUCT','PRODUCT']),iMo=pickCol(c,['MONTHS','MONTH']);
+    if(iId<0||iSk<0)return;
+    for(var r=hi+1;r<rows.length;r++){
+      var row=rows[r]||[],id=String(row[iId]||'').trim(),sku=String(row[iSk]||'').trim();
+      if(!id||!sku||/^✈/.test(id))continue;
+      var store=iSt>=0?String(row[iSt]||'').trim():'',brand=iBr>=0?String(row[iBr]||'').trim():'';
+      var want=iMo>=0?monthsFromText(row[iMo]):null;
+      SPACES.forEach(function(sp){
+        if(nk(sp.id)!==nk(id))return;
+        if(store&&nk(sp.store)!==nk(store))return;
+        var ms=want||[0,1,2,3,4,5,6,7,8,9,10,11];
+        ms.forEach(function(m){
+          if(!want&&!(sp.brands[m]||[]).length)return;           // follow the space's own run dates
+          if(brand&&!(sp.brands[m]||[]).some(function(b){return nk(b)===nk(brand)})&&!want)return;
+          splitSkus(sku).forEach(function(x){addSku(sp,m,brand,x)});
+        });
+      });
+    }
+  });
+  PROMO_TABS.forEach(function(tab){
+    var rows=rowsOf(wb,tab);if(!rows)return;
+    var hi=-1;for(var i=0;i<6;i++){if((rows[i]||[]).some(function(v){return String(v).trim().toUpperCase()==='BRAND'})){hi=i;break}}
+    if(hi<0)return;
+    var hdr=rows[hi]||[],mCol={},iB=-1,iSku=-1,iSub=-1;
+    hdr.forEach(function(v,j){var u=String(v).trim().toUpperCase();var k=MONU.indexOf(u);if(k>=0&&mCol[k]==null)mCol[k]=j;
+      if(u==='BRAND'&&iB<0)iB=j; if(/SKU|PRODUCT/.test(u)&&iSku<0)iSku=j; if(/SUBCAT/.test(u)&&iSub<0)iSub=j});
+    var cur='',group={};
+    for(var r=hi+1;r<rows.length;r++){
+      var row=rows[r]||[],b=String(row[iB]||'').trim();
+      if(b&&!/^[^A-Za-z0-9]/.test(b))cur=b;
+      if(!cur)continue;
+      for(var m=0;m<12;m++){
+        var ci=mCol[m];if(ci==null)continue;
+        var mech=String(row[ci]||'').trim();
+        if(!mech)continue;
+        var gk=tab+'|'+cur+'|'+mech;
+        if(!group[gk])group[gk]={tab:tab,brand:cur,mech:mech,months:{},skus:{},sub:iSub>=0?String(row[iSub]||'').trim():''};
+        group[gk].months[m]=1;
+        if(iSku>=0&&row[iSku])group[gk].skus[String(row[iSku]).trim()]=1;
+      }
+    }
+    Object.keys(group).forEach(function(k){var g=group[k];g.monthList=Object.keys(g.months).map(Number).sort(function(a,b){return a-b});g.nSku=Object.keys(g.skus).length;PROMOS.push(g)});
+  });
+}
+function splitSkus(s){return String(s).split(/\s*[;,|\n]\s*/).map(function(x){return x.trim()}).filter(Boolean)}
+function addSku(sp,m,brand,sku){
+  if(!sku)return;
+  if(!sp.skus)sp.skus={};
+  var a=sp.skus[m]||(sp.skus[m]=[]);
+  if(!a.some(function(x){return x.sku===sku&&x.brand===brand}))a.push({brand:brand||'',sku:sku});
+}
+function monthsFromText(t){
+  t=String(t||'').trim();if(!t)return null;
+  var out={};
+  t.split(/\s*[;,|]\s*/).forEach(function(part){
+    part=part.trim();if(!part)return;
+    var q=/^Q([1-4])$/i.exec(part);
+    if(q){var s=(+q[1]-1)*3;out[s]=1;out[s+1]=1;out[s+2]=1;return}
+    var rg=/^([A-Za-z]{3,})\.?\s*[-–—]\s*([A-Za-z]{3,})\.?$/.exec(part);
+    if(rg){var a=monIdx(rg[1]),b=monIdx(rg[2]);if(a>=0&&b>=0){for(var i=a;i<=b;i++)out[i]=1;return}}
+    var i2=monIdx(part);if(i2>=0)out[i2]=1;
+  });
+  var keys=Object.keys(out).map(Number);
+  return keys.length?keys:null;
+}
+function monIdx(s){return MONU.indexOf(String(s).slice(0,3).toUpperCase())}
+function addBrand(sp,m,b){b=String(b).trim();if(!b)return;if(!sp.brands[m])sp.brands[m]=[];if(sp.brands[m].indexOf(b)<0)sp.brands[m].push(b)}
+
+function parseMargin(ab){
+  var wb=XLSX.read(new Uint8Array(ab),{type:'array'});
+  var rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,defval:null});
+  // The sheet is a hierarchy: group in column A or B, brand in column C, the
+  // margin in column D. A margin on a group row applies to the brands under it
+  // until the next group at the same level. Values may be 0.65 or 65.
+  var gA=null,gB=null,mA=null,mB=null;
+  function rate(v){if(typeof v!=='number'||!isFinite(v)||v<=0)return null;return v>1.5?v/100:v}
+  rows.forEach(function(r){
+    if(!r)return;
+    var a=r[0]?String(r[0]).trim():'',b=r[1]?String(r[1]).trim():'',c=r[2]?String(r[2]).trim():'';
+    var m=rate(r[3]);
+    if(a){gA=a;mA=m;gB=null;mB=null;if(m!=null)MARGIN[nk(a.replace(/^total\s+/i,''))]=m;return}
+    if(b){gB=b;mB=m;if(m!=null)MARGIN[nk(b)]=m;return}
+    if(c){var v=m!=null?m:(mB!=null?mB:mA);if(v!=null&&MARGIN[nk(c)]==null)MARGIN[nk(c)]=v}
+  });
+}
+
+function parseSales(wb,code,mi){
+  var ws=wb.Sheets[wb.SheetNames[0]];if(!ws)return;
+  var rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+  var hi=-1;for(var i=0;i<Math.min(rows.length,15);i++){if((rows[i]||[]).some(function(v){return /brand/i.test(String(v).trim())})){hi=i;break}}
+  if(hi<0)return;
+  var hdr=rows[hi],cB=-1,cM=-1,cLY=-1;
+  hdr.forEach(function(v,j){var s=String(v).trim(),isVar=/var|%/i.test(s);
+    if(/brand/i.test(s)&&cB<0)cB=j;
+    else if(!isVar&&/mtd/i.test(s)&&/\bly\b/i.test(s)&&cLY<0)cLY=j;
+    else if(!isVar&&/mtd/i.test(s)&&cM<0)cM=j});
+  if(cB<0||cM<0)return;
+  var tgt=SALES[code]||(SALES[code]={});tgt[mi]={};
+  for(var r=hi+1;r<rows.length;r++){
+    var row=rows[r]||[],b=String(row[cB]||'').trim();
+    if(String(row[0]||'').trim().toLowerCase()==='total'){
+      (TOTALS[code]||(TOTALS[code]={}))[mi]={mtd:num(row[cM])||0,ly:cLY>=0?(num(row[cLY])||0):0};
+      continue;
+    }
+    if(!b)continue;
+    var s=num(row[cM]),ly=cLY>=0?num(row[cLY]):null;
+    if(s==null&&ly==null)continue;
+    tgt[mi][nk(b)]={name:b,s:s||0,ly:ly||0};
+  }
+}
+
+function parseMedia(db){
+  var assets={},nameCount={};
+  (db.assets||[]).forEach(function(a){assets[a.id]=a;var n=nk(a.name);if(n)nameCount[n]=(nameCount[n]||0)+1});
+  (db.assets||[]).forEach(function(a){
+    [a.code,a.id].forEach(function(x){var k=nk(x);if(k)MEDIA_ALIAS[k]=a.id});
+    var n=nk(a.name);if(n&&nameCount[n]===1&&!MEDIA_ALIAS[n])MEDIA_ALIAS[n]=a.id; // a name shared by several screens is ambiguous
+  });
+  var byOrder={};(db.orders||[]).forEach(function(o){byOrder[o.no]=o});
+  var perOrder={};(db.bookings||[]).forEach(function(bk){(perOrder[bk.orderNo]||(perOrder[bk.orderNo]=[])).push(bk)});
+  Object.keys(perOrder).forEach(function(no){
+    var o=byOrder[no];if(!o)return;
+    var val=num(o.actualSold)||num(o.assignedValue)||0;if(!val)return;
+    var bks=perOrder[no],per=val/bks.length;
+    bks.forEach(function(bk){
+      var a=assets[bk.assetId];if(!a)return;
+      var from=new Date(bk.dateFrom+'T00:00:00Z'),to=new Date(bk.dateTo+'T00:00:00Z');
+      if(isNaN(from)||isNaN(to))return;
+      var days=Math.max(1,Math.round((to-from)/864e5)+1),perDay=per/days;
+      for(var d=new Date(from);d<=to;d=new Date(d.getTime()+864e5)){
+        if(d.getUTCFullYear()!==CFG.year)continue;
+        var m=d.getUTCMonth(),o2=MEDIA_RENT[a.id]||(MEDIA_RENT[a.id]={});
+        o2[m]=(o2[m]||0)+perDay;
+      }
+    });
+  });
+}
+
+/* ---------- derived ---------- */
+function salesCode(store){return /LAX/i.test(store)?'LAX':'SFO'}
+function brandCount(code,m){
+  var key=code+'|'+m;if(brandCount._c&&brandCount._c[key])return brandCount._c[key];
+  brandCount._c=brandCount._c||{};
+  var o={};
+  SPACES.forEach(function(sp){if(sp.media||salesCode(sp.store)!==code)return;(sp.brands[m]||[]).forEach(function(b){var k=nk(b);o[k]=(o[k]||0)+1})});
+  return brandCount._c[key]=o;
+}
+function monthsOf(p){
+  if(p==='Full year')return [0,1,2,3,4,5,6,7,8,9,10,11];
+  if(p==='Year to date'){var n=new Date().getUTCFullYear()===CFG.year?new Date().getUTCMonth():11;var a=[];for(var i=0;i<=n;i++)a.push(i);return a}
+  var q=/^Q(\d)$/.exec(p);if(q){var s=(+q[1]-1)*3;return [s,s+1,s+2]}
+  var i2=MON.indexOf(p);return i2<0?[new Date().getUTCMonth()]:[i2];
+}
+function assetsFor(sp){
+  var ids={},out=[],names=[sp.id,sp.name];
+  (sp.specs||[]).forEach(function(s){names.push(s.id)});
+  names.forEach(function(x){var a=MEDIA_ALIAS[nk(x)];if(a&&!ids[a]){ids[a]=1;out.push(a)}});
+  return out;
+}
+function mediaShare(){
+  // Several workbook rows can point at one screen (the Totems rows do).
+  // Split that screen's rent evenly between them so it is counted once.
+  MEDIA_SHARE={};
+  SPACES.forEach(function(sp){assetsFor(sp).forEach(function(a){MEDIA_SHARE[a]=(MEDIA_SHARE[a]||0)+1})});
+}
+function rentOf(sp,m){
+  var r=0;
+  if(sp.rentCol)r+=sp.rentCol;
+  assetsFor(sp).forEach(function(a){
+    var pot=MEDIA_RENT[a];if(!pot||!pot[m])return;
+    r+=pot[m]/Math.max(1,MEDIA_SHARE[a]||1);
+  });
+  return r;
+}
+function calc(sp,period){
+  var code=salesCode(sp.store),ms=monthsOf(period);
+  var s=0,ly=0,mgW=0,mgS=0,rent=0,have=false;
+  ms.forEach(function(m){
+    rent+=rentOf(sp,m);
+    if(sp.media)return; // a screen's brand is the advertiser, not a seller
+    var tbl=(SALES[code]||{})[m];if(!tbl)return;
+    var cnt=brandCount(code,m);
+    (sp.brands[m]||[]).forEach(function(b){
+      var k=nk(b),row=tbl[k];if(!row)return;
+      have=true;
+      var share=1/Math.max(1,cnt[k]||1);
+      s+=row.s*share; ly+=row.ly*share;
+      var mg=MARGIN[k];if(mg!=null){mgW+=row.s*share;mgS+=row.s*share*mg}
+    });
+  });
+  var o={sales:have?s:null,ly:have?ly:null,rent:rent,months:ms.length,sqft:sp.sqft};
+  // Margin dollars count only the brands that appear on the margin sheet.
+  // The rate is the rate on those brands; coverage says how much of the
+  // space's sales it actually covers, so a 65% rate on 8% of sales is clear.
+  o.mgnPct=mgW>0?mgS/mgW:null;
+  o.mg=mgW>0?mgS:null;
+  o.cov=(o.sales&&mgW>0)?mgW/o.sales:null;
+  var ov=SAVE.base&&SAVE.base[sp.src+'|'+sp.store+'|'+sp.id];
+  o.baseSrc=ov!=null?'set':'ly';
+  o.base=ov!=null?ov:o.ly;
+  o.up=(o.base&&o.sales!=null)?(o.sales-o.base)/o.base:null;
+  o.value=(o.mg!=null?o.mg:0)+o.rent;
+  o.spsf=(o.sales!=null&&sp.sqft)?o.sales/sp.sqft:null;
+  o.rpsf=sp.sqft?o.rent/sp.sqft:null;
+  return o;
+}
+
+/* ---------- state ---------- */
+var S={store:'',period:'Jul',cat:'all',size:'sqft',view:'blocks',sel:null,y:'up',sortK:'value',dir:-1,focus:true};
+var CMP={active:0,cols:[]};
+var ROWS=[];
+function vis(){return ROWS}
+function build(){
+  brandCount._c=null;
+  ROWS=SPACES.filter(function(sp){
+      if(S.focus)return isFocus(sp);
+      return sp.store===S.store&&(S.cat==='all'||sp.cat===S.cat)})
+    .map(function(sp){var k=calc(sp,S.period);k.sp=sp;k.n=sp.name;k.key=sp.src+'|'+sp.store+'|'+sp.id;return k});
+  if(!S.sel||!ROWS.some(function(k){return k.key===S.sel}))S.sel=ROWS.length?ROWS[0].key:null;
+  while(CMP.cols.length<3)CMP.cols.push({key:null,p:S.period});
+  CMP.cols.forEach(function(c,i){if(!c.key||!findKey(c.key))c.key=ROWS[i]?ROWS[i].key:(ROWS[0]?ROWS[0].key:null)});
+}
+function isFocus(sp){return FOCUS.some(function(f){return nk(f.id)===nk(sp.id)&&nk(f.store)===nk(sp.store)})}
+function findKey(k){for(var i=0;i<SPACES.length;i++){var sp=SPACES[i];if(sp.src+'|'+sp.store+'|'+sp.id===k)return sp}return null}
+function inCmp(k){return CMP.cols.some(function(c){return c.key===k})}
+function pick(k){CMP.cols[CMP.active].key=k;S.sel=k;refresh()}
+
+/* ---------- KPIs ---------- */
+function kpis(){
+  var s=0,b=0,r=0,m=0,hasS=false,hasB=false,hasM=false;
+  vis().forEach(function(k){
+    if(k.sales!=null){s+=k.sales;hasS=true}
+    if(k.base!=null){b+=k.base;hasB=true}
+    r+=k.rent;
+    if(k.mg!=null){m+=k.mg;hasM=true}
+  });
+  var up=hasS&&hasB&&b>0?(s-b)/b:null;
+  var cov=0,covS=0;vis().forEach(function(k){if(k.cov!=null&&k.sales){cov+=k.cov*k.sales;covS+=k.sales}});
+  var covPct=covS?cov/covS:null;
+  var rows=[['Brand sales in these spaces',hasS?money(s):'—',catLabel()],
+            ['Sales uplift',pct(up),'vs baseline'],
+            ['Rental income',r?money(r):'—',r?'rent paid to DFA':'no rent on file'],
+            ['Margin $',hasM?money(m):'—',covPct==null?'no margins on file':(Math.round(covPct*100)+'% of sales have a margin')],
+            ['Profit',(hasM||r)?money(m+r):'—','margin plus rent']];
+  $('kpis').innerHTML=rows.map(function(x,i){return '<div class="kpi'+(i===4?' hi':'')+'"><div class="k">'+x[0]+'</div><div class="v">'+x[1]+'</div><div class="s">'+esc(x[2])+'</div></div>'}).join('');
+}
+function catLabel(){return S.cat==='all'?'all spaces':(CAT_LABEL[S.cat]||S.cat)}
+
+/* ---------- blocks ---------- */
+function squarify(items,W,H){
+  var tot=0;items.forEach(function(i){tot+=i.v});
+  if(!tot)return [];
+  var k=W*H/tot,nodes=items.map(function(i){return{i:i,a:i.v*k}});
+  var out=[],row=[],r={x:0,y:0,w:W,h:H};
+  function worst(rw,side){var s=0,mx=0,mn=1e18;rw.forEach(function(n){s+=n.a;if(n.a>mx)mx=n.a;if(n.a<mn)mn=n.a});return Math.max(side*side*mx/(s*s),s*s/(side*side*mn))}
+  function place(rw){var s=0;rw.forEach(function(n){s+=n.a});
+    if(r.w>=r.h){var cw=s/r.h,yy=r.y;rw.forEach(function(n){var hh=n.a/cw;out.push({i:n.i,x:r.x,y:yy,w:cw,h:hh});yy+=hh});r.x+=cw;r.w-=cw}
+    else{var rh=s/r.w,xx=r.x;rw.forEach(function(n){var ww=n.a/rh;out.push({i:n.i,x:xx,y:r.y,w:ww,h:rh});xx+=ww});r.y+=rh;r.h-=rh}}
+  nodes.forEach(function(n){var side=Math.min(r.w,r.h);
+    if(row.length===0||worst(row.concat([n]),side)<=worst(row,side))row.push(n);else{place(row);row=[n]}});
+  if(row.length)place(row);
+  return out;
+}
+var CAT_COLOR={beauty:'#F2C9D6',swt:'#E8D5AE',fg:'#C9DCF2',other:'#DED8D0',store:'#DCD2E8',media:'#CDE6DC'};
+var CAT_SHORT={beauty:'Beauty',swt:'SWT',fg:'Food & Gifts',store:'Store owned',media:'Media',other:'Other'};
+function catGroup(sp){
+  if(sp.cat==='store')return 'store';
+  if(sp.cat==='media')return 'media';
+  return sp.cat.split('-')[1]||'other';
+}
+function tint(sp){return CAT_COLOR[catGroup(sp)]||'#DED8D0'}
+function lines(k){
+  // Two lines only — the rest lives in the scorecard.
+  if(k.sp.media)return ['Profit '+(k.value?money(k.value):'—'),((k.sp.specs||[]).length>1?k.sp.specs.length+' screens':'Screen')];
+  return [(S.size==='sqft'?(k.sqft?k.sqft+' sq ft':'sq ft blank'):('Profit '+money(k.value))),
+          (k.sales==null?'no sales match':money(k.sales)+(k.up!=null?' · '+pct(k.up):''))];
+}
+function sizeVal(k,key){return key==='sqft'?(k.sqft||0):(k.value||0)}
+
+function drawTM(){
+  var host=$('tm'),W=host.clientWidth,H=host.clientHeight,V=vis();
+  if(!V.length){host.innerHTML='<div style="padding:20px;color:var(--ink3)">No spaces in this store and category.</div>';$('legend').textContent='';$('skip').textContent='';return}
+  var names={sqft:'Square feet',value:'Profit'};
+  if(S.view==='map'){
+    var placed=V.filter(function(k){return k.sp.left!=null&&k.sp.top!=null});
+    var cells=placed.length?placed.map(function(k){return{k:k,x:k.sp.left,y:k.sp.top}}):
+      V.map(function(k,i){var cols=Math.ceil(Math.sqrt(V.length))||1;
+        return{k:k,x:(i%cols+0.5)/cols*100,y:(Math.floor(i/cols)+0.5)/Math.max(1,Math.ceil(V.length/cols))*100}});
+    var unplaced=placed.length?V.length-placed.length:0;
+    host.innerHTML='<div class="mapbox"><div class="mapwall"></div>'+cells.map(function(c){
+      var k=c.k;return '<div class="mblk'+(k.key===S.sel?' sel':(inCmp(k.key)?' inc':''))+'" data-k="'+esc(k.key)+'" style="left:'+c.x+'%;top:'+c.y+'%;background:'+tint(k.sp)+'">'+
+        '<div class="n">'+esc(k.n)+'</div>'+lines(k).map(function(x){return '<div class="m">'+esc(x)+'</div>'}).join('')+'</div>';
+    }).join('')+'<div class="mapnote">'+(placed.length?('Positions come from the LEFT and TOP columns in the workbook.'+(unplaced?' '+unplaced+' space(s) have no position and are not shown.':'')):'No map positions on these spaces — laid out on a grid.')+'</div></div>';
+    $('skip').textContent='';
+  }else{
+    var key=S.size,nz=V.map(function(k){return sizeVal(k,key)}).filter(function(v){return v>0});
+    var fb=nz.length?Math.min.apply(null,nz)*0.5:1;
+    var items=V.map(function(k){return{d:k,v:sizeVal(k,key)>0?sizeVal(k,key):fb,blank:!(sizeVal(k,key)>0)}});
+    var zero=V.filter(function(k){return sizeVal(k,key)<=0});
+    items.sort(function(a,b){return b.v-a.v});
+    var rects=squarify(items,W,H);
+    host.innerHTML=rects.map(function(r){
+      var k=r.i.d,mid=r.w>62&&r.h>34;
+      var n=r.w>110?Math.max(0,Math.min(2,Math.floor((r.h-30)/15))):0;
+      return '<div class="blk'+(k.key===S.sel?' sel':(inCmp(k.key)?' inc':''))+'" data-k="'+esc(k.key)+'" style="left:'+r.x+'px;top:'+r.y+'px;width:'+r.w+'px;height:'+r.h+'px;background:'+tint(k.sp)+'">'+
+        (mid?'<div class="n">'+esc(k.n)+'</div>':'')+lines(k).slice(0,n).map(function(x){return '<div class="m">'+esc(x)+'</div>'}).join('')+'</div>';
+    }).join('');
+    $('skip').textContent=zero.length?(zero.length+' space(s) have no '+names[key].toLowerCase()+' and are drawn at a small fixed size: '+zero.map(function(k){return k.n}).join(', ')):'';
+  }
+  Array.prototype.forEach.call(host.querySelectorAll('[data-k]'),function(el){el.onclick=function(){pick(el.getAttribute('data-k'))}});
+  var seen={},keys=[];
+  V.forEach(function(k){var g=catGroup(k.sp);if(!seen[g]){seen[g]=1;keys.push('<span style="border-left:10px solid '+CAT_COLOR[g]+';padding-left:5px">'+CAT_SHORT[g]+'</span>')}});
+  $('legend').innerHTML=(S.view==='map'?'Map view. ':'Size: '+names[S.size]+'. ')+keys.join(' ');
+}
+
+/* ---------- compare ---------- */
+var PERIODS=[['Range',['Full year','Year to date']],['Quarter',['Q1','Q2','Q3','Q4']],['Month',MON]];
+function periodOpts(sel){return PERIODS.map(function(g){return '<optgroup label="'+g[0]+'">'+g[1].map(function(o){return '<option'+(o===sel?' selected':'')+'>'+o+'</option>'}).join('')+'</optgroup>'}).join('')}
+function opt(sp,sel){var k=sp.src+'|'+sp.store+'|'+sp.id;return '<option value="'+esc(k)+'"'+(k===sel?' selected':'')+'>'+esc(sp.name)+' — '+esc(sp.store)+'</option>'}
+function spaceOpts(sel){
+  var foc=SPACES.filter(isFocus);
+  var head=foc.length?'<optgroup label="Focus spaces">'+foc.map(function(sp){return opt(sp,sel)}).join('')+'</optgroup>':'';
+  var pool=SPACES.filter(function(sp){return isFocus(sp)?false:(S.focus||sp.store===S.store)});
+  var byCat={};pool.forEach(function(sp){(byCat[sp.cat]||(byCat[sp.cat]=[])).push(sp)});
+  return head+CAT_ORDER.filter(function(c){return byCat[c]}).map(function(c){
+    return '<optgroup label="'+(CAT_LABEL[c]||c)+'">'+byCat[c].map(function(sp){return opt(sp,sel)}).join('')+'</optgroup>'}).join('');
+}
+function compare(){
+  var cols=CMP.cols.map(function(c){var sp=findKey(c.key);if(!sp)return null;var k=calc(sp,c.p);k.sp=sp;k.key=c.key;return k}).filter(Boolean);
+  if(!cols.length){$('compare').innerHTML='';return}
+  var rows=[['Store',function(k){return k.sp.store},null],
+   ['Category',function(k){return CAT_LABEL[k.sp.cat]||k.sp.cat},null],
+   ['Zone / dept',function(k){return k.sp.zone||'—'},null],
+   ['Screens in this rental',function(k){return k.sp.media?specList(k.sp):'—'},null],
+   ['Brands this period',function(k){return brandsIn(k.sp,k.months_p)},null],
+   ['SKUs on this space',function(k){var a=skusIn(k.sp,k.months_p);return a.length?(a.length+': '+a.slice(0,3).map(function(x){return x.sku}).join(', ')+(a.length>3?' +'+(a.length-3):'')):'—'},null],
+   ['Promos running on it',function(k){var p=promosOn(k.sp,k.months_p);return p.length?(p.length+': '+p.slice(0,2).map(function(g){return g.brand+' '+g.mech}).join('; ')+(p.length>2?' +'+(p.length-2):'')):'—'},null],
+   ['Square feet',function(k){return k.sqft||'—'},'sqft'],
+   ['Sales',function(k){return money(k.sales)},'sales'],
+   ['Baseline',null,'base'],
+   ['Uplift vs baseline',function(k){return pct(k.up)},'up'],
+   ['Rental income',function(k){return k.rent?money(k.rent):'—'},'rent'],
+   ['Margin %',function(k){return k.mgnPct==null?'—':(k.mgnPct*100).toFixed(0)+'%'},'mgnPct'],
+   ['Sales with a margin on file',function(k){return k.cov==null?'—':Math.round(k.cov*100)+'%'},'cov'],
+   ['Margin $',function(k){return money(k.mg)},'mg'],
+   ['Profit (margin + rent)',function(k){return money(k.value)},'value'],
+   ['Profit per sq ft',function(k){return k.sqft?'$'+Math.round(k.value/k.sqft):'—'},'vps']];
+  cols.forEach(function(k,i){k.months_p=CMP.cols[i].p;k.vps=k.sqft?k.value/k.sqft:null});
+  var best={};['sqft','sales','up','rent','mgnPct','mg','value','vps'].forEach(function(f){var mx=null;cols.forEach(function(k){var v=k[f];if(v!=null&&isFinite(v)&&(mx==null||v>mx))mx=v});best[f]=mx});
+  var head='<thead><tr><th class="lab"></th>'+cols.map(function(k,i){
+    return '<th><div class="colh'+(i===CMP.active?' act':'')+'" data-col="'+i+'"><div class="pk">Space</div><select data-cs="'+i+'">'+spaceOpts(CMP.cols[i].key)+'</select>'+
+      '<div class="pk">Period</div><select data-cp="'+i+'" style="margin-bottom:0">'+periodOpts(CMP.cols[i].p)+'</select></div></th>'}).join('')+'</tr></thead>';
+  var body=rows.map(function(r){
+    return '<tr><td class="lab">'+r[0]+'</td>'+cols.map(function(k,i){
+      if(r[2]==='base'){var ov=SAVE.base&&SAVE.base[k.key];
+        return '<td class="v"><input class="binp" type="number" step="1000" data-cb="'+i+'" value="'+(ov!=null?Math.round(ov):(k.base!=null?Math.round(k.base):''))+'" placeholder="'+(k.ly!=null?Math.round(k.ly):'set')+'" aria-label="Baseline"><div style="font-size:10px;color:var(--ink3)">'+(ov!=null?'you set':(k.ly!=null?'last year':'none'))+'</div></td>'}
+      var v=r[2]?k[r[2]]:null,isBest=r[2]&&v!=null&&best[r[2]]!=null&&v===best[r[2]]&&cols.length>1;
+      return '<td class="v'+(isBest?' best':'')+'">'+esc(r[1](k))+'</td>'}).join('')+'</tr>'}).join('');
+  $('compare').innerHTML='<div class="ph"><h3>Compare spaces</h3><span class="mut">Pick a space and a period in each column. Click a block above to fill the outlined column.</span></div><div class="scroll"><table class="cmp">'+head+'<tbody>'+body+'</tbody></table></div>';
+  var host=$('compare');
+  Array.prototype.forEach.call(host.querySelectorAll('[data-col]'),function(el){el.onclick=function(e){if(/SELECT|OPTION|INPUT/.test(e.target.tagName))return;CMP.active=+el.getAttribute('data-col');S.sel=CMP.cols[CMP.active].key;refresh()}});
+  Array.prototype.forEach.call(host.querySelectorAll('[data-cs]'),function(s){s.onchange=function(){var i=+s.getAttribute('data-cs');CMP.active=i;CMP.cols[i].key=s.value;S.sel=s.value;refresh()}});
+  Array.prototype.forEach.call(host.querySelectorAll('[data-cp]'),function(s){s.onchange=function(){CMP.cols[+s.getAttribute('data-cp')].p=s.value;compare()}});
+  Array.prototype.forEach.call(host.querySelectorAll('[data-cb]'),function(inp){inp.onchange=function(){setBase(CMP.cols[+inp.getAttribute('data-cb')].key,inp.value)}});
+}
+function specList(sp){
+  var s=sp.specs||[];if(!s.length)return '—';
+  if(s.length===1)return s[0].dim||s[0].type||s[0].id;
+  return s.length+': '+s.slice(0,3).map(function(x){return x.id}).join(', ')+(s.length>3?' +'+(s.length-3):'');
+}
+function skusIn(sp,period){
+  var ms=monthsOf(period||S.period),o={},out=[];
+  ms.forEach(function(m){((sp.skus||{})[m]||[]).forEach(function(x){var k=x.brand+'|'+x.sku;if(!o[k]){o[k]=1;out.push(x)}})});
+  return out;
+}
+function promosOn(sp,period){
+  var ms=monthsOf(period||S.period),bs={},out=[];
+  ms.forEach(function(m){(sp.brands[m]||[]).forEach(function(b){bs[nk(b)]=1})});
+  var skus=skusIn(sp,period).map(function(x){return nk(x.sku)});
+  PROMOS.forEach(function(g){
+    if(!bs[nk(g.brand)])return;
+    if(!g.monthList.some(function(m){return ms.indexOf(m)>=0}))return;
+    var hit=!skus.length||Object.keys(g.skus).some(function(s){var ns=nk(s);return skus.some(function(k){return k&&(ns.indexOf(k)>=0||k.indexOf(ns)>=0)})});
+    if(hit)out.push(g);
+  });
+  return out;
+}
+function brandsIn(sp,period){
+  var ms=monthsOf(period||S.period),o={};
+  ms.forEach(function(m){(sp.brands[m]||[]).forEach(function(b){o[b]=1})});
+  var a=Object.keys(o);return a.length?(a.length>3?a.slice(0,3).join(', ')+' +'+(a.length-3):a.join(', ')):'—';
+}
+function setBase(key,val){
+  SAVE.base=SAVE.base||{};
+  var v=parseFloat(val);
+  if(!val||isNaN(v)||v<=0)delete SAVE.base[key];else SAVE.base[key]=v;
+  save();refresh();kpis();
+}
+
+/* ---------- matrix ---------- */
+function matrix(){
+  var V=vis().filter(function(k){return k.rent>0||k.sales!=null});
+  if(!V.length){$('matrix').innerHTML='<div class="ghost">Nothing to plot yet.</div>';$('mlegend').textContent='';return}
+  var W=900,H=320,pl=46,pr=14,pt=14,pb=34;
+  var yf=S.y==='up'?function(k){return k.up}:function(k){return k.mg};
+  var xs=V.map(function(k){return k.rent}),ys=V.map(yf).filter(function(v){return v!=null&&isFinite(v)});
+  var xmax=Math.max.apply(null,xs)*1.1||1,ymin=Math.min(0,ys.length?Math.min.apply(null,ys):0),ymax=(ys.length?Math.max.apply(null,ys):1)*1.1||1;
+  function X(v){return pl+v/xmax*(W-pl-pr)}
+  function Y(v){return H-pb-(v-ymin)/((ymax-ymin)||1)*(H-pt-pb)}
+  var g='<line x1="'+pl+'" y1="'+(H-pb)+'" x2="'+(W-pr)+'" y2="'+(H-pb)+'" stroke="var(--rule2)"/><line x1="'+pl+'" y1="'+pt+'" x2="'+pl+'" y2="'+(H-pb)+'" stroke="var(--rule2)"/>'+
+   '<line x1="'+pl+'" y1="'+Y(0)+'" x2="'+(W-pr)+'" y2="'+Y(0)+'" stroke="var(--ink3)" stroke-dasharray="4 3"/>'+
+   '<text x="'+(W-pr-4)+'" y="'+(Y(0)-5)+'" text-anchor="end" font-size="11" fill="var(--ink3)">'+(S.y==='up'?'At baseline':'Zero')+'</text>'+
+   '<text x="'+((pl+W-pr)/2)+'" y="'+(H-8)+'" text-anchor="middle" font-size="11" fill="var(--ink3)">Rental income, more to the right</text>'+
+   '<text x="13" y="'+((pt+H-pb)/2)+'" font-size="11" fill="var(--ink3)" transform="rotate(-90 13 '+((pt+H-pb)/2)+')" text-anchor="middle">'+(S.y==='up'?'Sales uplift':'Margin $')+', more is up</text>';
+  var cols={beauty:'#D4537E',swt:'#8C6D3F',fg:'#2F6FD0',other:'#7A736A'};
+  V.forEach(function(k){
+    var yv=yf(k);if(yv==null||!isFinite(yv))return;
+    var g2=k.sp.cat==='store'?'other':k.sp.cat.split('-')[1]||'other';
+    var r=k.sqft?6+Math.sqrt(k.sqft)*.7:7;
+    g+='<circle data-k="'+esc(k.key)+'" cx="'+X(k.rent)+'" cy="'+Y(yv)+'" r="'+r+'" fill="'+(cols[g2]||'#7A736A')+'" fill-opacity=".5" stroke="'+(k.key===S.sel?'var(--ink)':(cols[g2]||'#7A736A'))+'" stroke-width="'+(k.key===S.sel?2.5:1)+'" style="cursor:pointer"><title>'+esc(k.n)+'</title></circle>';
+  });
+  $('matrix').innerHTML='<svg viewBox="0 0 '+W+' '+H+'" width="100%" role="img" aria-label="Rental income against sales impact">'+g+'</svg>';
+  $('mlegend').innerHTML='Bubble size is square feet (default size where sq ft is blank). Colour: <span style="color:#D4537E">Beauty</span>, <span style="color:#8C6D3F">SWT</span>, <span style="color:#2F6FD0">Food &amp; Gifts</span>, <span style="color:#7A736A">other</span>. Spaces with no uplift are left off.';
+  Array.prototype.forEach.call($('matrix').querySelectorAll('circle'),function(c){c.onclick=function(){pick(c.getAttribute('data-k'))}});
+}
+
+/* ---------- scorecard ---------- */
+function score(){
+  var cols=[['n','Space'],['store','Store'],['cat','Category'],['zone','Zone / dept'],['sqft','Sq ft','r'],['sales','Sales','r'],['base','Baseline','r'],['up','Uplift','r'],['rent','Rent','r'],['mgnPct','Margin %','r'],['mg','Margin $','r'],['value','Profit','r'],['nsku','SKUs','r']];
+  var rows=vis().slice().sort(function(a,b){
+    var x=S.sortK==='cat'?(CAT_LABEL[a.sp.cat]||''):S.sortK==='store'?a.sp.store:S.sortK==='zone'?a.sp.zone:S.sortK==='n'?a.n:S.sortK==='nsku'?skusIn(a.sp,S.period).length:a[S.sortK];
+    var y=S.sortK==='cat'?(CAT_LABEL[b.sp.cat]||''):S.sortK==='store'?b.sp.store:S.sortK==='zone'?b.sp.zone:S.sortK==='n'?b.n:S.sortK==='nsku'?skusIn(b.sp,S.period).length:b[S.sortK];
+    if(x==null)x=-Infinity;if(y==null)y=-Infinity;
+    return (x>y?1:x<y?-1:0)*S.dir});
+  var fmt={sales:money,rent:money,mg:money,value:money,up:pct,mgnPct:function(v){return v==null?'—':(v*100).toFixed(0)+'%'}};
+  $('score').innerHTML='<thead><tr>'+cols.map(function(c){return '<th data-k="'+c[0]+'" class="'+(c[2]||'')+'">'+c[1]+(S.sortK===c[0]?(S.dir<0?' ▾':' ▴'):'')+'</th>'}).join('')+'</tr></thead><tbody>'+
+   rows.map(function(k){return '<tr class="row'+(k.key===S.sel?' sel':'')+'" data-k="'+esc(k.key)+'">'+cols.map(function(c){
+     if(c[0]==='base'){var ov=SAVE.base&&SAVE.base[k.key];
+       return '<td class="r"><input class="binp" type="number" step="1000" data-b="'+esc(k.key)+'" value="'+(ov!=null?Math.round(ov):(k.base!=null?Math.round(k.base):''))+'" placeholder="set" aria-label="Baseline"></td>'}
+     var v=c[0]==='cat'?(CAT_LABEL[k.sp.cat]||k.sp.cat):c[0]==='store'?k.sp.store:c[0]==='zone'?(k.sp.zone||'—'):c[0]==='n'?k.n:c[0]==='nsku'?(skusIn(k.sp,S.period).length||'—'):k[c[0]];
+     if(fmt[c[0]])v=fmt[c[0]](v);
+     if(v==null||v==='')v='—';
+     return '<td class="'+(c[2]||'')+'">'+esc(v)+'</td>'}).join('')+'</tr>'}).join('')+'</tbody>';
+  Array.prototype.forEach.call($('score').querySelectorAll('th'),function(th){th.onclick=function(){var k=th.getAttribute('data-k');if(S.sortK===k)S.dir*=-1;else{S.sortK=k;S.dir=-1}score()}});
+  Array.prototype.forEach.call($('score').querySelectorAll('tr.row'),function(tr){tr.onclick=function(){pick(tr.getAttribute('data-k'))}});
+  Array.prototype.forEach.call($('score').querySelectorAll('input[data-b]'),function(inp){
+    inp.onclick=function(e){e.stopPropagation()};
+    inp.onchange=function(){setBase(inp.getAttribute('data-b'),inp.value)}});
+}
+
+function periodWarn(){
+  var code=salesCode(S.focus&&ROWS.length?ROWS[0].sp.store:S.store),have=Object.keys(SALES[code]||{}).map(Number);
+  var want=monthsOf(S.period),miss=want.filter(function(m){return have.indexOf(m)<0});
+  var w=[];
+  if(miss.length===want.length)w.push('No sales report in the repo for '+S.period+' '+CFG.year+' at '+code+', so sales, uplift and margin are blank. Months on file: '+(have.length?have.map(function(m){return MON[m]}).join(', '):'none')+'.');
+  else if(miss.length)w.push('Missing sales reports for '+miss.map(function(m){return MON[m]}).join(', ')+' at '+code+'. Those months count as zero.');
+  if(!vis().some(function(k){return k.rent>0}))w.push('No rent on these spaces. Rent comes from Media Tracker orders with a value, and from a RENT column on the workbook tabs once you add one.');
+  $('spWarn').innerHTML=w.length?'<div class="warn">'+w.join('<br>')+'</div>':'';
+}
+function refresh(){build();periodWarn();drawTM();compare();matrix();score();kpis();bindGo()}
+
+/* ---------- promos ---------- */
+var PS={sel:0};
+function promoRows(){
+  var code=salesCode($('pStoreSel').value||'SFO A'),cat=$('pCatSel').value;
+  return PROMOS.filter(function(g){return cat==='all'||g.tab===cat}).map(function(g){
+    var on=[],off=[],k=nk(g.brand);
+    for(var m=0;m<12;m++){
+      var tbl=(SALES[code]||{})[m],tot=(TOTALS[code]||{})[m];
+      if(!tbl||!tot||!tot.mtd)continue;
+      var row=tbl[k];if(!row)continue;
+      var share=row.s/tot.mtd;
+      (g.months[m]?on:off).push({m:m,share:share,s:row.s});
+    }
+    var avg=function(a){if(!a.length)return null;var t=0;a.forEach(function(x){t+=x.share});return t/a.length};
+    var onA=avg(on),offA=avg(off);
+    var lift=(onA!=null&&offA)?onA/offA-1:null;
+    var onS=0;on.forEach(function(x){onS+=x.s});
+    var extra=(lift!=null)?onS-(onS/(1+lift)):null;
+    var mg=MARGIN[k];
+    return {g:g,on:on,off:off,onA:onA,offA:offA,lift:lift,onS:onS,extra:extra,mgn:mg==null?null:mg,
+            mgGain:(extra!=null&&mg!=null)?extra*mg:null,months:on.length};
+  }).filter(function(r){return r.months>0}).sort(function(a,b){return (b.lift==null?-9:b.lift)-(a.lift==null?-9:a.lift)});
+}
+function promos(){
+  var rows=promoRows();
+  var code=salesCode($('pStoreSel').value||'SFO A');
+  var have=Object.keys(SALES[code]||{}).length;
+  $('pNote').textContent=have?('Sales loaded for '+have+' month(s) of '+code+'.'):('No sales files loaded for '+code+'.');
+  if(!rows.length){$('ptable').innerHTML='';$('pdetail').innerHTML='<div class="ghost">No promo rows match a brand in the loaded sales files yet.</div>';return}
+  $('ptable').innerHTML='<thead><tr><th>Brand</th><th>Mechanic</th><th>Months on</th><th class="r">Share on</th><th class="r">Share off</th><th class="r">Lift</th><th class="r">Extra sales</th><th class="r">Margin on extra</th></tr></thead><tbody>'+
+   rows.map(function(r,i){return '<tr class="row'+(i===PS.sel?' sel':'')+'" data-i="'+i+'"><td>'+esc(r.g.brand)+'</td><td>'+esc(r.g.mech)+'</td><td class="mut">'+r.g.monthList.map(function(m){return MON[m]}).join(', ')+'</td>'+
+    '<td class="r">'+(r.onA==null?'—':(r.onA*100).toFixed(2)+'%')+'</td><td class="r">'+(r.offA==null?'—':(r.offA*100).toFixed(2)+'%')+'</td>'+
+    '<td class="r">'+pct(r.lift)+'</td><td class="r">'+money(r.extra)+'</td><td class="r">'+money(r.mgGain)+'</td></tr>'}).join('')+'</tbody>';
+  Array.prototype.forEach.call($('ptable').querySelectorAll('tr.row'),function(tr){tr.onclick=function(){PS.sel=+tr.getAttribute('data-i');promos()}});
+  var r=rows[Math.min(PS.sel,rows.length-1)];
+  var cost=(SAVE.cost&&SAVE.cost[r.g.tab+'|'+r.g.brand+'|'+r.g.mech])||null;
+  var net=(r.mgGain!=null&&cost!=null)?r.mgGain-cost:null;
+  var base=100,on=r.lift!=null?100*(1+r.lift):null;
+  var mx=Math.max(130,on||130);
+  $('pdetail').innerHTML='<div class="ph"><h3>'+esc(r.g.brand)+' — '+esc(r.g.mech)+'</h3><span class="mut">'+esc(r.g.tab.replace(' Promos',''))+(r.g.nSku?' · '+r.g.nSku+' SKU rows':'')+'</span></div>'+
+   '<div class="mut" style="margin-bottom:10px">Share of store sales, indexed to the months without this promo = 100. Share takes traffic out of it.</div>'+
+   '<div class="bars"><div class="b"><div class="val">100</div><div class="fill" style="height:'+(100/mx*100)+'%;background:var(--rule2)"></div><div class="lbl">Months off</div></div>'+
+   '<div class="b"><div class="val">'+(on==null?'—':Math.round(on))+'</div><div class="fill" style="height:'+(on?on/mx*100:0)+'%;background:'+(on>=100?'#1D9E75':'var(--neg)')+';opacity:.85"></div><div class="lbl">Months on</div></div></div>'+
+   '<dl class="dl"><dt>Months on / off</dt><dd>'+r.on.length+' / '+r.off.length+'</dd>'+
+   '<dt>Sales in promo months</dt><dd>'+money(r.onS)+'</dd>'+
+   '<dt>Extra sales from the lift</dt><dd>'+money(r.extra)+'</dd>'+
+   '<dt>Margin rate</dt><dd>'+(r.mgn==null?'not on margin sheet':(r.mgn*100).toFixed(0)+'%')+'</dd>'+
+   '<dt>Margin on the extra sales</dt><dd>'+money(r.mgGain)+'</dd>'+
+   '<dt>Discount or free-unit cost</dt><dd><input class="binp" id="pCost" type="number" step="500" value="'+(cost!=null?cost:'')+'" placeholder="enter"></dd>'+
+   '<dt>Net after cost</dt><dd><b>'+money(net)+'</b></dd></dl>'+
+   '<div class="note">Months on and off are compared within '+CFG.year+'. With only a few sales files loaded the comparison is thin — load more months for a fair read. Seasonality is not removed.</div>';
+  $('pCost').onchange=function(){SAVE.cost=SAVE.cost||{};var v=parseFloat(this.value);
+    if(!this.value||isNaN(v))delete SAVE.cost[r.g.tab+'|'+r.g.brand+'|'+r.g.mech];else SAVE.cost[r.g.tab+'|'+r.g.brand+'|'+r.g.mech]=v;
+    save();promos()};
+}
+
+/* ---------- chrome ---------- */
+function seg(id,cb){var el=$(id);if(!el)return;Array.prototype.forEach.call(el.querySelectorAll('button'),function(b){
+  b.onclick=function(){Array.prototype.forEach.call(el.querySelectorAll('button'),function(x){x.setAttribute('aria-pressed',x===b?'true':'false')});cb(b.getAttribute('data-v'))}})}
+function go(pg){
+  Array.prototype.forEach.call(document.querySelectorAll('.page'),function(p){p.classList.toggle('on',p.id==='pg-'+pg)});
+  Array.prototype.forEach.call($('nav').querySelectorAll('button'),function(b){b.setAttribute('aria-pressed',b.getAttribute('data-pg')===pg?'true':'false')});
+  if(pg==='spaces')refresh();
+  if(pg==='promos')promos();
+  if(location.hash.replace('#','')!==pg)history.replaceState(null,'','#'+pg);
+  window.scrollTo(0,0);
+}
+function bindGo(){Array.prototype.forEach.call(document.querySelectorAll('[data-go]'),function(b){b.onclick=function(){go(b.getAttribute('data-go'))}})}
+
+function start(){
+  STORES=[];var seen={};
+  SPACES.forEach(function(sp){if(!seen[sp.store]){seen[sp.store]=1;STORES.push(sp.store)}});
+  STORES.sort();mediaShare();
+  S.store=STORES.indexOf('SFO A')>=0?'SFO A':(STORES[0]||'');
+  $('storeSel').innerHTML=$('pStoreSel').innerHTML=STORES.map(function(s){return '<option>'+esc(s)+'</option>'}).join('');
+  $('periodSel').innerHTML=periodOpts(S.period);
+  S.period=defaultPeriod(S.store);
+  $('periodSel').value=S.period;
+  rebuildCats();
+  $('storeSel').onchange=function(){S.store=this.value;CMP.cols.forEach(function(c){c.key=null});
+    S.period=defaultPeriod(S.store);$('periodSel').value=S.period;CMP.cols.forEach(function(c){c.p=S.period});
+    rebuildCats();refresh()};
+  $('periodYear').textContent=CFG.year;
+  $('periodSel').onchange=function(){S.period=this.value;CMP.cols.forEach(function(c){c.p=S.period});refresh()};
+  $('catSel').onchange=function(){S.cat=this.value;refresh()};
+  seg('focusSeg',function(v){
+    S.focus=(v==='focus');
+    $('storeSel').disabled=S.focus;$('catSel').disabled=S.focus;
+    if(S.focus){var fs=SPACES.filter(isFocus);CMP.cols.forEach(function(c,i){if(fs[i])c.key=fs[i].src+'|'+fs[i].store+'|'+fs[i].id})}
+    refresh();
+  });
+  seg('sizeSeg',function(v){S.size=v;drawTM()});
+  seg('viewSeg',function(v){S.view=v;drawTM()});
+  seg('ySeg',function(v){S.y=v;matrix()});
+  $('pStoreSel').onchange=$('pCatSel').onchange=function(){PS.sel=0;promos()};
+  $('brand').onclick=function(){go('home')};
+  Array.prototype.forEach.call($('nav').querySelectorAll('button'),function(b){b.onclick=function(){go(b.getAttribute('data-pg'))}});
+  window.addEventListener('resize',function(){if($('pg-spaces').classList.contains('on'))drawTM()});
+  $('storeSel').disabled=true;$('catSel').disabled=true;
+  var fs=SPACES.filter(isFocus);
+  CMP.cols=[0,1,2].map(function(i){var f=fs[i]||fs[0];return{key:f?f.src+'|'+f.store+'|'+f.id:null,p:S.period}});
+  $('focusNote').textContent=fs.length+' of '+FOCUS.length+' focus spaces found'+(fs.length<FOCUS.length?' — check the FOCUS list at the top of the file':'');
+  $('status').textContent=SPACES.length+' spaces · '+LOADED.sales.length+' sales file(s)';
+  $('status').onclick=showSources;
+  sources();
+  $('load').classList.remove('on');
+  var h=(location.hash||'').replace('#','');
+  go(h==='spaces'||h==='promos'?h:'home');
+}
+function defaultPeriod(store){
+  var code=salesCode(store||'SFO A'),have=Object.keys(SALES[code]||{}).map(Number).sort(function(a,b){return a-b});
+  if(!have.length)return 'Full year';
+  var now=new Date();
+  if(now.getUTCFullYear()===CFG.year&&have.indexOf(now.getUTCMonth())>=0)return MON[now.getUTCMonth()];
+  return MON[have[have.length-1]];
+}
+function rebuildCats(){
+  var have={};SPACES.forEach(function(sp){if(sp.store===S.store)have[sp.cat]=(have[sp.cat]||0)+1});
+  var list=CAT_ORDER.filter(function(c){return have[c]});
+  $('catSel').innerHTML='<option value="all">All spaces</option>'+list.map(function(c){return '<option value="'+c+'">'+(CAT_LABEL[c]||c)+' ('+have[c]+')</option>'}).join('');
+  if(!have[S.cat])S.cat='all';
+  $('catSel').value=S.cat;
+}
+function sources(){
+  var sq=SPACES.filter(function(s){return s.sqft}).length,pos=SPACES.filter(function(s){return s.left!=null}).length;
+  $('srcList').innerHTML=[
+   '<span class="chip">'+SPACES.length+' spaces from the master workbook</span>',
+   '<span class="chip">'+sq+' with square feet</span>',
+   '<span class="chip">'+pos+' with map positions</span>',
+   '<span class="chip">'+PROMOS.length+' promo mechanics</span>',
+   '<span class="chip">'+SPACES.filter(function(s){return s.skus}).length+' spaces with SKUs</span>',
+   '<span class="chip">'+Object.keys(MARGIN).length+' brands with a margin</span>',
+   '<span class="chip">'+LOADED.sales.length+' monthly sales file(s)</span>',
+   '<span class="chip">'+Object.keys(MEDIA_RENT).length+' screen(s) with rent booked</span>'
+  ].join('')+'<div class="mut" style="margin-top:8px">Sales files found: '+(LOADED.sales.join(', ')||'none')+'.</div>'+
+  (LOADED.fail.length?'<div class="mut">Did not load: '+LOADED.fail.join(', ')+'.</div>':'');
+}
+function showSources(){
+  $('dlgBody').innerHTML='<h3 style="font-size:17px;margin-bottom:8px">How the numbers are built</h3>'+
+   '<p class="mut" style="font-size:12.5px;line-height:1.6">A space\'s sales are the sales of the brands booked into it that month, from the monthly sales report. When a brand sits in more than one space, its sales are split evenly between them, so no sale is counted twice. Margin comes from Sales_Margin.xlsx by brand. Rent comes from the Media Tracker\'s saved orders, matched by screen code, plus a RENT column on the workbook tabs once that column exists. The baseline defaults to the same months last year from the sales report, and anything you type overrides it and is saved in this browser.</p>'+
+   '<div style="margin-top:10px">'+$('srcList').innerHTML+'</div>';
+  $('dlg').classList.add('on');
+}
+boot();
+</script>
+</body>
+</html>
