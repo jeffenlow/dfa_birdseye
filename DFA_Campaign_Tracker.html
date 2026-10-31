@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DFA Campaigns</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{--bg:#FAFAF8;--panel:#F5F0EA;--panelHi:#FFFFFF;--cream:#F5EFE3;--rule:#E5DDD5;--rule2:#D6CCC0;--line:#E5DDD5;
+  --ink:#1C1917;--ink2:#5F574E;--ink3:#7A736A;--accent:#8C6D3F;--pos:#1D9E75;--neg:#EF4444;--good:#1D9E75;--bad:#D14343;--warn:#B7791F;--amber:#C4761F;
+  --disp:"Cambria","Hoefler Text",Georgia,serif;--body:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;--mono:"SF Mono",Menlo,Consolas,"Roboto Mono",monospace}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:13px}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+::-webkit-scrollbar{width:10px;height:10px}::-webkit-scrollbar-thumb{background:var(--rule2);border-radius:5px}
+header{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:9px 16px;border-bottom:1px solid var(--rule);background:var(--panelHi)}
+.brand{display:flex;align-items:baseline;gap:9px;padding:3px 8px 3px 4px}
+.brand b{font-family:var(--disp);font-weight:700;font-size:19px;letter-spacing:.01em}
+.brand span{font-size:10px;letter-spacing:.16em;color:var(--accent);text-transform:uppercase;font-weight:600}
+header .sub{color:var(--ink3);font-size:11.5px;font-family:var(--mono)}
+.spacer{flex:1}
+.btn,button.btn,header button,.sect button,.card button,.modal button{padding:7px 14px;border-radius:6px;border:1px solid var(--rule2);background:#fff;font-size:12.5px;font-weight:500;color:var(--ink2)}
+.btn:hover,header button:hover,.sect button:hover,.card button:hover,.modal button:hover{border-color:var(--accent);color:var(--ink);background:var(--cream)}
+button.pri,.btn.pri{background:var(--ink)!important;border-color:var(--ink)!important;color:#fff!important;font-weight:600}
+button.sm{padding:3px 9px;font-size:11.5px}
+select,input[type=date],input[type=text],input[type=number],textarea{background:#fff;border:1px solid var(--rule2);color:var(--ink);border-radius:5px;padding:5px 8px;font-family:var(--body);font-size:12.5px}
+input[type=number]{font-family:var(--mono)}
+textarea{width:100%;min-height:78px;line-height:1.55;resize:vertical}
+main{max-width:1280px;margin:0 auto;padding:18px 22px 60px}
+.arch{max-width:1180px;margin:0 auto;padding:26px 22px 60px}
+.arch h2{font-family:var(--disp);font-size:24px;margin:0 0 4px}
+.arch .lede{color:var(--ink3);font-size:13px}
+.agrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(268px,1fr));gap:16px}
+.acard{background:#fff;border:1px solid var(--rule);border-radius:9px;overflow:hidden;cursor:pointer;transition:box-shadow .15s,border-color .15s}
+.acard:hover{border-color:var(--accent);box-shadow:0 6px 20px rgba(28,25,23,.10)}
+.acard .thumb{height:132px;background:var(--panel);display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative}
+.acard .thumb img{width:100%;height:100%;object-fit:cover}
+.acard .thumb .none{color:var(--ink3);font-size:11.5px}
+.acard .thumb .cnt{position:absolute;right:7px;bottom:7px;background:rgba(28,25,23,.78);color:#fff;font-size:10.5px;padding:2px 7px;border-radius:9px}
+.acard .meta{padding:11px 13px 13px}
+.acard .nm{font-weight:600;font-size:13.5px;margin-bottom:3px}
+.acard .dt{font-family:var(--mono);font-size:10.5px;color:var(--ink3);margin-bottom:8px}
+.acard .kpi{display:flex;gap:14px;font-size:11.5px}
+.acard .kpi b{font-family:var(--mono);display:block;font-size:14px;font-weight:600}
+.acard .kpi i{font-style:normal;color:var(--ink3);font-size:10px;text-transform:uppercase;letter-spacing:.08em}
+.acard.new{border-style:dashed;display:flex;align-items:center;justify-content:center;min-height:230px;color:var(--ink3);flex-direction:column;gap:6px;background:transparent}
+.acard.new .plus{font-size:30px;line-height:1;color:var(--accent)}
+.callouts{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;background:var(--rule);border:1px solid var(--rule);border-radius:8px;overflow:hidden;margin-bottom:16px}
+.co{background:#fff;padding:12px 14px}
+.co .k{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3);font-weight:600;margin-bottom:5px}
+.co .v{font-family:var(--mono);font-size:18px;font-weight:600;line-height:1.2}
+.co .s{font-size:11px;color:var(--ink3);margin-top:3px}
+.tabs{display:flex;gap:0;border-bottom:1px solid var(--rule);margin-bottom:16px;flex-wrap:wrap}
+.tab{padding:10px 16px;font-weight:600;font-size:12.5px;color:var(--ink3);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px}
+.tab:hover{color:var(--ink)}.tab.on{color:var(--ink);border-color:var(--accent)}
+.panel{display:none}.panel.on{display:block}
+.card,.sect{background:#fff;border:1px solid var(--rule);border-radius:9px;padding:18px 20px;margin-bottom:16px}
+.card h3,.sect h3{font-family:var(--disp);font-size:16px;margin:0 0 3px;font-weight:700}
+.mut,.hint{color:var(--ink3);font-size:12px;line-height:1.5}
+.hint{margin-bottom:12px}
+.lbl,.f label,.row>label{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink3);font-weight:600}
+.chips{display:flex;border:1px solid var(--rule2);border-radius:6px;overflow:hidden;width:max-content;max-width:100%;margin-bottom:12px;background:var(--bg)}
+.chip{padding:6px 14px;font-size:12px;font-weight:500;cursor:pointer;color:var(--ink3);border-right:1px solid var(--rule2);white-space:nowrap}
+.chip:last-child{border-right:none}.chip.on{background:var(--ink);color:#fff;font-weight:600}
+table{border-collapse:collapse;width:100%;font-size:12.5px}
+th{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink3);text-align:right;padding:7px 9px;border-bottom:1px solid var(--rule2);font-weight:600}
+td{padding:7px 9px;border-bottom:1px solid var(--rule);text-align:right;font-family:var(--mono);font-size:12px}
+th:first-child,td:first-child{text-align:left}td.l,th.l{text-align:left;font-family:var(--body)}
+td:first-child{font-family:var(--body);font-size:12.5px}
+tr.key td{font-weight:600;background:var(--cream)}
+.good{color:var(--good);font-weight:600}.bad{color:var(--bad);font-weight:600}.warn{color:var(--warn);font-weight:600}
+.pill{display:inline-block;padding:2px 9px;border-radius:10px;font-size:11px;font-weight:600;background:#eee;color:var(--ink2);font-family:var(--body)}
+.pill.g{background:#dff1e6;color:#177a5a}.pill.r{background:#f9dede;color:#b02a2a}.pill.y{background:#faedd2;color:var(--warn)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+.mini{background:var(--bg);border:1px solid var(--rule);border-radius:7px;padding:10px 12px}
+.mini h4{margin:0 0 6px;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:700}
+.mini ol{margin:0;padding-left:18px}.mini li{display:flex;justify-content:space-between;gap:8px;padding:2px 0;font-size:12.5px}
+.mini li span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mini li span:last-child{font-family:var(--mono);font-size:11.5px;color:var(--ink2)}
+.f{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:12px}.f label{display:flex;flex-direction:column;gap:4px}
+.row{display:grid;gap:5px;margin-bottom:13px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+.note{background:var(--cream);border-left:3px solid var(--accent);padding:9px 12px;font-size:12px;margin:10px 0;line-height:1.55;color:var(--ink2);border-radius:0 5px 5px 0}
+.empty{padding:36px;text-align:center;color:var(--ink3);border:1px dashed var(--rule2);border-radius:9px}
+.kread{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:1px;background:var(--rule);border:1px solid var(--rule);border-radius:7px;overflow:hidden}
+.kread div{background:#fff;padding:11px 13px}
+.kread .k{font-size:9.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--ink3);font-weight:600;margin-bottom:4px}
+.kread .v{font-family:var(--mono);font-size:17px;font-weight:600}.kread .s{font-size:10.5px;color:var(--ink3);margin-top:2px}
+/* calendar */
+.cal{border:1px solid var(--rule);border-radius:8px;overflow:hidden;background:#fff}
+.calh{display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--panel);border-bottom:1px solid var(--rule)}
+.calh b{flex:1;font-family:var(--disp);font-size:14px}
+.calh button{padding:1px 9px!important;font-size:14px!important;line-height:1.3}
+.calg{display:grid;grid-template-columns:repeat(7,1fr);gap:0}
+.calg .h{font-size:9.5px;text-transform:uppercase;letter-spacing:.1em;color:var(--ink3);text-align:center;font-weight:600;padding:5px 0;border-bottom:1px solid var(--rule)}
+.day{min-height:64px;border-right:1px solid var(--rule);border-bottom:1px solid var(--rule);padding:3px 4px;font-size:10.5px;background:#fff;position:relative;overflow:hidden}
+.day:nth-child(7n){border-right:none}
+.day.blank{background:var(--bg)}
+.day.x{background:var(--panel);opacity:.65}
+.day.pick{cursor:pointer}.day.pick:hover{background:var(--cream)}
+.day.nodata{opacity:.4;cursor:not-allowed}
+.day.sel{outline:2px solid var(--accent);outline-offset:-2px;background:var(--cream)}
+.day b{font-family:var(--mono);font-size:10.5px;color:var(--ink3);font-weight:600}
+.day .dot{position:absolute;right:4px;top:5px;width:6px;height:6px;border-radius:50%;background:var(--pos)}
+.tag{display:block;margin-top:2px;padding:1px 4px;border-radius:3px;font-size:9.5px;background:#efe3cc;color:#6b4f24;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tag.G{background:#dbe9f6;color:#1e4d78}.tag.L{background:#e4f0dc;color:#3a6a1f}
+.tag.key{font-weight:700}
+.abcols{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-bottom:6px}
+@media(max-width:1000px){.abcols{grid-template-columns:1fr}}
+.abcol{background:#fff;border:1px solid var(--rule);border-radius:9px;padding:12px}
+.abh{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.abl{width:26px;height:26px;border-radius:50%;background:var(--ink);color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center;font-family:var(--disp)}
+.abday{min-height:50px;margin-bottom:8px;font-size:12px;line-height:1.5}
+.abday b{font-family:var(--disp);font-size:15px;display:block}
+/* execution */
+.drop{border:1px dashed var(--rule2);border-radius:7px;padding:14px;text-align:center;color:var(--ink3);font-size:12px;cursor:pointer}
+.drop:hover{border-color:var(--accent);color:var(--ink2)}
+.gal{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin:12px 0}
+.gal figure{margin:0;border:1px solid var(--rule);border-radius:7px;overflow:hidden;background:var(--panel);position:relative}
+.gal img{width:100%;display:block;aspect-ratio:4/3;object-fit:cover;cursor:zoom-in}
+.gal figcaption{padding:0;font-size:11.5px}
+.gal input[type=text]{width:100%;border:none;border-top:1px solid var(--rule);border-radius:0;font-size:11.5px;padding:6px 9px}
+.gal .x{position:absolute;right:5px;top:5px;width:20px;height:20px;border-radius:50%;background:rgba(28,25,23,.75);color:#fff;font-size:13px;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0!important;border:none!important}
+.kindh{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:700;margin:16px 0 0}
+.rlist{margin:8px 0 0;padding:0;list-style:none}
+.rlist li{padding:9px 0;border-bottom:1px solid var(--rule);font-size:12.5px;line-height:1.55;display:flex;gap:10px;align-items:flex-start}
+.rlist li:last-child{border-bottom:none}.rlist .t{font-weight:600}.rlist .m{color:var(--ink3);font-family:var(--mono);font-size:11px}
+.rlist .grow{flex:1}
+.scrim{position:fixed;inset:0;background:rgba(28,25,23,.5);z-index:50;display:flex;align-items:center;justify-content:center;padding:20px}
+.modal{background:#fff;border-radius:10px;padding:22px;max-width:460px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+.modal h3{font-family:var(--disp);font-size:20px;margin:0 0 14px}
+.modal input,.modal select{width:100%}
+.lb{cursor:zoom-out}.lb img{max-width:94vw;max-height:92vh;border-radius:6px;background:#fff}
+.datebtn{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:9px 12px;border:1px solid var(--rule2);border-radius:7px;background:#fff;margin-bottom:8px;cursor:pointer}
+.datebtn:hover{border-color:var(--accent);background:var(--cream)}
+.datebtn .lbl{font-size:9.5px}.datebtn b{flex:1;font-family:var(--disp);font-size:16px}.datebtn .ico{font-size:15px}
+.abday .key{font-weight:700;color:var(--accent)}
+.abcol .pill{white-space:nowrap}.abcol th,.abcol td{padding:7px 6px}
+.abday{min-height:22px}
+.scrim.full{align-items:stretch;padding:0;background:rgba(28,25,23,.55)}
+.fullcal{background:#fff;width:100%;max-width:1500px;margin:0 auto;overflow:auto;padding:18px 24px}
+.fch{display:flex;align-items:center;gap:14px;margin-bottom:12px}
+.cal.big .calh{padding:12px 16px}.cal.big .calh b{font-size:22px}
+.cal.big .day{min-height:112px;padding:6px 8px}.cal.big .day b{font-size:14px}
+.cal.big .tag{font-size:11.5px;padding:3px 6px;margin-top:3px;white-space:normal}
+.cal.big .calg .h{font-size:11px;padding:8px 0}
+#printArea{display:none}
+.pa h1{font-family:var(--disp);font-size:30px;margin:0 0 4px}.pa h3{font-family:var(--disp);font-size:16px;margin:24px 0 8px;padding-bottom:5px;border-bottom:1px solid var(--rule)}
+.pa p{line-height:1.6;font-size:12.5px;color:var(--ink2);white-space:pre-wrap}
+.hidden{display:none!important}
+@media print{header,#viewHome,#viewCamp,.scrim{display:none!important}#printArea{display:block!important;padding:0}body{background:#fff}.gal figure{break-inside:avoid}}
+@media(max-width:700px){main{padding:12px}.two{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+  <button class="btn hidden" id="bBack" onclick="goHome()">← Campaigns</button>
+  <div class="brand"><b id="hTitle">Campaigns</b><span id="hTag">DFA</span></div>
+  <div class="sub" id="hSub"></div>
+  <div class="spacer"></div>
+  <span id="hBtns" class="hidden" style="display:flex;gap:8px">
+    <button onclick="dlTemplate()">Download data template</button>
+    <button class="pri" onclick="document.getElementById('fileSales').click()">Load sales file</button>
+  </span>
+  <input type="file" id="fileSales" accept=".xlsx,.xls,.csv" style="display:none" onchange="onFile(this)">
+</header>
+<div id="viewHome"></div>
+<div id="viewCamp" class="hidden">
+<main>
+  <div id="callouts" class="callouts"></div>
+  <div class="tabs" id="tabs">
+    <div class="tab on" data-t="score">Scorecard</div>
+    <div class="tab" data-t="ab">A / B</div>
+    <div class="tab" data-t="top">Top performers</div>
+    <div class="tab" data-t="sched">Schedule</div>
+    <div class="tab" data-t="exec">Campaign execution</div>
+    <div class="tab" data-t="setup">Setup &amp; data</div>
+  </div>
+  <div class="panel on" id="p-score"></div>
+  <div class="panel" id="p-ab"></div>
+  <div class="panel" id="p-top"></div>
+  <div class="panel" id="p-sched"></div>
+  <div class="panel" id="p-exec"></div>
+  <div class="panel" id="p-setup"></div>
+</main>
+</div>
+<div id="printArea" class="pa"></div>
+<div id="lb" class="scrim lb hidden" onclick="this.classList.add('hidden')"><img id="lbImg"></div>
+<div id="modalHost"></div>
+
+<script>
+/* ============ DEFAULT CAMPAIGN: HOLIDAY 2026 ============ */
+function holiday26(){
+  var A=[];
+  function add(store,side,date,shift,type){A.push({store:store,side:side,date:'2026-12-'+date,shift:shift,type:type})}
+  [['11','N'],['12','D'],['19','D']].forEach(function(x){add('SFO','A',x[0],x[1],'Painting')});
+  [['04','N'],['18','N'],['21','D']].forEach(function(x){add('SFO','A',x[0],x[1],'Sampling')});
+  [['18','N'],['21','D']].forEach(function(x){add('SFO','A',x[0],x[1],'Santa')});
+  [['05','M'],['09','M'],['16','M']].forEach(function(x){add('SFO','G',x[0],x[1],'Painting')});
+  [['05','M'],['12','M'],['19','M'],['23','M']].forEach(function(x){add('SFO','G',x[0],x[1],'Sampling')});
+  [['19','M'],['23','M']].forEach(function(x){add('SFO','G',x[0],x[1],'Santa')});
+  ['04','06','11','13','18','20'].forEach(function(d){add('LAX','All',d,'N','Painting');add('LAX','All',d,'M','Sampling')});
+  return {name:'Holiday 2026',start:'2026-12-01',end:'2026-12-31',exclude:['2026-12-24','2026-12-25'],
+    lift:0.03,convShare:0.02,
+    stores:{
+      SFO:{baseSales:7700000,baseTraffic:379000,baseConv:0.12,trend:-0.09,lySales:null,lyTraffic:null,lyTxns:null,lmSales:null,lmTraffic:null,lmTxns:null},
+      LAX:{baseSales:13600000,baseTraffic:444000,baseConv:0.138,trend:-0.08,lySales:null,lyTraffic:null,lyTxns:null,lmSales:null,lmTraffic:null,lmTxns:null}},
+    activations:A};
+}
+function blankCampaign(){var c=holiday26();c.name='New campaign';c.start='';c.end='';c.exclude=[];c.activations=[];
+  ['SFO','LAX'].forEach(function(s){var o=c.stores[s];Object.keys(o).forEach(function(k){o[k]=null})});return c}
+
+/* ============ STORAGE (IndexedDB: photos and sales are too big for localStorage) ============ */
+var DBX={db:null,mem:{},
+  open:function(){return new Promise(function(res){try{var r=indexedDB.open('dfa_campaigns',1);r.onupgradeneeded=function(){r.result.createObjectStore('kv')};r.onsuccess=function(){DBX.db=r.result;res()};r.onerror=function(){res()};r.onblocked=function(){res()}}catch(e){res()}})},
+  get:function(k){return new Promise(function(res){if(!DBX.db)return res(DBX.mem[k]);try{var q=DBX.db.transaction('kv').objectStore('kv').get(k);q.onsuccess=function(){res(q.result)};q.onerror=function(){res(undefined)}}catch(e){res(DBX.mem[k])}})},
+  set:function(k,v){DBX.mem[k]=v;return new Promise(function(res){if(!DBX.db)return res();try{var t=DBX.db.transaction('kv','readwrite');t.objectStore('kv').put(v,k);t.oncomplete=function(){res()};t.onerror=function(){res()}}catch(e){res()}})},
+  del:function(k){delete DBX.mem[k];return new Promise(function(res){if(!DBX.db)return res();try{var t=DBX.db.transaction('kv','readwrite');t.objectStore('kv').delete(k);t.oncomplete=function(){res()};t.onerror=function(){res()}}catch(e){res()}})}};
+function uid(p){return p+Date.now().toString(36)+Math.floor(Math.random()*9999).toString(36)}
+
+/* ============ STATE ============ */
+var INDEX=[],CAMP=null,CFG=null,EXEC=null,SALES=[],DAILY=[],LOADS=[],PHOTO={};
+var UI={tab:'score',store:'NAM',metric:'sales'};
+function defaultExec(){return{objective:'',ran:'',worked:'',change:'',photos:[],notes:[],moves:[]}}
+var _st=null;
+function save(){clearTimeout(_st);_st=setTimeout(persistCamp,250)}
+function persistCamp(){if(!CAMP)return;DBX.set('c:'+CAMP.id,{id:CAMP.id,cfg:CFG,exec:EXEC});
+  var e=INDEX.filter(function(x){return x.id===CAMP.id})[0];if(e){e.name=CFG.name;e.start=CFG.start;e.end=CFG.end;DBX.set('index',INDEX)}}
+function saveData(){if(!CAMP)return;DBX.set('d:'+CAMP.id,{sales:SALES,daily:DAILY,loads:LOADS})}
+
+/* ============ HELPERS ============ */
+var STORES=['SFO','LAX'];
+function $(id){return document.getElementById(id)}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function n0(v){return v==null||isNaN(v)?'–':Math.round(v).toLocaleString('en-US')}
+function usd(v){return v==null||isNaN(v)?'–':'$'+Math.round(v).toLocaleString('en-US')}
+function usd2(v){return v==null||isNaN(v)?'–':'$'+v.toFixed(2)}
+function pct(v,d){return v==null||isNaN(v)?'–':(v>0?'+':'')+(v*100).toFixed(d==null?1:d)+'%'}
+function pc(v,d){return v==null||isNaN(v)?'–':(v*100).toFixed(d==null?1:d)+'%'}
+function short(v){if(v==null)return'–';var a=Math.abs(v);return a>=1e6?'$'+(v/1e6).toFixed(2)+'M':a>=1e3?'$'+(v/1e3).toFixed(1)+'K':'$'+Math.round(v)}
+function cls(v){return v==null?'':v>0?'good':v<0?'bad':''}
+var DOW=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+function pd(iso){var p=iso.split('-');return new Date(Date.UTC(+p[0],+p[1]-1,+p[2]))}
+function iso(d){return d.toISOString().slice(0,10)}
+function dow(i){return pd(i).getUTCDay()}
+function addDays(i,n){var d=pd(i);d.setUTCDate(d.getUTCDate()+n);return iso(d)}
+function lab(i){var d=pd(i);return DOW[d.getUTCDay()]+' '+(d.getUTCMonth()+1)+'/'+d.getUTCDate()}
+function daysBetween(a,b){return Math.round((pd(b)-pd(a))/864e5)}
+function num(v){if(v==null||v==='')return null;var x=parseFloat(String(v).replace(/[$,%\s]/g,''));return isNaN(x)?null:x}
+
+/* ============ DERIVED DATA ============ */
+var D={};
+function inWin(d){return (!CFG.start||d>=CFG.start)&&(!CFG.end||d<=CFG.end)}
+function excluded(d){return (CFG.exclude||[]).indexOf(d)>=0}
+function rebuild(){
+  D.day={};            // store|date -> {sales,units,traffic,txns,hasSales}
+  SALES.forEach(function(r){var k=r.s+'|'+r.d,o=D.day[k]||(D.day[k]={s:r.s,d:r.d,sales:0,units:0,traffic:null,txns:null});o.sales+=r.$;o.units+=r.u||0});
+  DAILY.forEach(function(r){var k=r.s+'|'+r.d,o=D.day[k]||(D.day[k]={s:r.s,d:r.d,sales:0,units:0,traffic:null,txns:null});
+    if(r.traffic!=null)o.traffic=r.traffic;if(r.txns!=null)o.txns=r.txns;if(r.sales!=null&&!o.sales)o.sales=r.sales});
+  D.load={};LOADS.forEach(function(r){D.load[r.s+'|'+r.d]=r});
+  D.act={};            // store|date -> [{side,shift,type}]
+  (CFG.activations||[]).forEach(function(a){var k=a.store+'|'+a.date;(D.act[k]=D.act[k]||[]).push(a)});
+  D.win=SALES.filter(function(r){return inWin(r.d)});
+  D.dates=[];Object.keys(D.day).forEach(function(k){var d=D.day[k].d;if(inWin(d)&&D.dates.indexOf(d)<0)D.dates.push(d)});D.dates.sort();
+}
+function typesOf(store,d){var a=D.act[store+'|'+d];if(!a)return null;var t=[];a.forEach(function(x){if(t.indexOf(x.type)<0)t.push(x.type)});t.sort();return t}
+function hasAct(store,d){return !!D.act[store+'|'+d]}
+function dayMetrics(o){
+  var m={sales:o.sales,units:o.units,traffic:o.traffic,txns:o.txns};
+  m.spp=o.traffic?o.sales/o.traffic:null;m.ticket=o.txns?o.sales/o.txns:null;m.conv=(o.traffic&&o.txns!=null)?o.txns/o.traffic:null;return m}
+function agg(store,from,to){ // sum a store (or NAM) across window
+  var out={sales:0,units:0,traffic:0,txns:0,days:0,tDays:0,xDays:0};
+  var stores=store==='NAM'?STORES:[store];
+  stores.forEach(function(s){Object.keys(D.day).forEach(function(k){var o=D.day[k];if(o.s!==s||!inWin(o.d))return;
+    out.sales+=o.sales;out.units+=o.units;out.days++;
+    if(o.traffic!=null){out.traffic+=o.traffic;out.tDays++}
+    if(o.txns!=null){out.txns+=o.txns;out.xDays++}})});
+  return out;
+}
+function campDays(){if(!CFG.start||!CFG.end)return 0;return daysBetween(CFG.start,CFG.end)+1}
+
+/* ============ SCORECARD ============ */
+function storeBase(s){var c=CFG.stores[s];if(!c||c.baseSales==null||c.baseTraffic==null||c.baseConv==null)return null;
+  var txns=c.baseTraffic*c.baseConv;return{sales:c.baseSales,traffic:c.baseTraffic,conv:c.baseConv,txns:txns,spp:c.baseSales/c.baseTraffic,ticket:c.baseSales/txns}}
+function targetOf(b){var spp=b.spp*(1+CFG.lift),conv=b.conv*(1+CFG.convShare),traffic=b.traffic,sales=spp*traffic,txns=traffic*conv;
+  return{sales:sales,traffic:traffic,conv:conv,txns:txns,spp:spp,ticket:sales/txns}}
+function addB(a,b){return{sales:a.sales+b.sales,traffic:a.traffic+b.traffic,txns:a.txns+b.txns,conv:(a.txns+b.txns)/(a.traffic+b.traffic),spp:(a.sales+b.sales)/(a.traffic+b.traffic),ticket:(a.sales+b.sales)/(a.txns+b.txns)}}
+function baseFor(s){
+  if(s!=='NAM')return storeBase(s);
+  var a=storeBase('SFO'),b=storeBase('LAX');return a&&b?addB(a,b):null}
+function sumC(f){var a=CFG.stores.SFO[f],b=CFG.stores.LAX[f];return a!=null&&b!=null?a+b:null}
+function ref(s,pre){ // LY or LM reference values
+  function get(st,f){return CFG.stores[st][pre+f]}
+  var st=s==='NAM'?STORES:[s],S=0,T=0,X=0,okS=true,okT=true,okX=true;
+  st.forEach(function(x){var a=get(x,'Sales'),b=get(x,'Traffic'),c=get(x,'Txns');
+    if(a==null)okS=false;else S+=a;if(b==null)okT=false;else T+=b;if(c==null)okX=false;else X+=c});
+  return{sales:okS?S:null,traffic:okT?T:null,txns:okX?X:null}}
+function actualFor(s){
+  var a=agg(s),N=campDays(),stN=s==='NAM'?2:1;
+  if(!a.days)return null;
+  var dateCount=D.dates.length;                   // days with data (any store)
+  var pace=N?Math.min(1,dateCount/N):1;
+  var hasT=a.tDays>=a.days&&a.days>0, hasX=a.xDays>=a.days&&a.days>0;
+  return{sales:a.sales,units:a.units,traffic:hasT?a.traffic:null,txns:hasX?a.txns:null,pace:pace,dates:dateCount,
+    spp:hasT?a.sales/a.traffic:null,ticket:hasX?a.sales/a.txns:null,conv:(hasT&&hasX)?a.txns/a.traffic:null}}
+function status(act,tgt,base){if(act==null||tgt==null)return'';return act>=tgt?'<span class="pill g">On target</span>':act>=base?'<span class="pill y">Above baseline</span>':'<span class="pill r">Below baseline</span>'}
+function renderScore(){
+  var el=$('p-score'),h='';
+  h+='<div class="chips">'+['NAM','SFO','LAX'].map(function(s){return'<div class="chip'+(UI.store===s?' on':'')+'" data-store="'+s+'">'+s+'</div>'}).join('')+'</div>';
+  var b=baseFor(UI.store);
+  if(!b){el.innerHTML=h+'<div class="empty">Enter this campaign\'s baselines in <b>Setup &amp; data</b> to get a scorecard.</div>';wire(el);return}
+  var t=targetOf(b),act=actualFor(UI.store),ly=ref(UI.store,'ly'),lm=ref(UI.store,'lm');
+  var pace=act?act.pace:1;
+  var partial=act&&pace<1;
+  h+='<div class="card"><h3>'+esc(CFG.name)+' · '+UI.store+'</h3><div class="mut">'+(act?(act.dates+' of '+campDays()+' days loaded'+(partial?'. Sales, traffic and transactions are compared to the baseline for the days loaded so far (baseline × '+(pace*100).toFixed(0)+'%).':'.')):'No sales loaded yet.')+' Target: +'+(CFG.lift*100).toFixed(1)+'% spend per passenger, traffic held at baseline.</div>';
+  h+='<table><tr><th>Metric</th><th>Baseline</th><th>Target</th><th>Last year</th><th>Last month</th><th>Actual</th><th>vs baseline</th><th>vs target</th><th class="l">Status</th></tr>';
+  function row(label,key,fmt,keyRow,prorate,lyv,lmv){
+    var bv=b[key],tv=t[key],av=act?act[key]:null,bp=prorate?bv*pace:bv,tp=prorate?tv*pace:tv;
+    var vb=av!=null?av/bp-1:null,vt=av!=null?av/tp-1:null;
+    h+='<tr'+(keyRow?' class="key"':'')+'><td>'+label+'</td><td>'+fmt(bp)+'</td><td>'+fmt(tp)+'</td><td>'+(lyv!=null?fmt(lyv):'–')+'</td><td>'+(lmv!=null?fmt(lmv):'–')+'</td><td>'+(av!=null?fmt(av):'–')+'</td><td class="'+cls(vb)+'">'+pct(vb)+'</td><td class="'+cls(vt)+'">'+pct(vt)+'</td><td class="l">'+status(av!=null?(prorate?av/pace:av):null,tv,bv)+'</td></tr>'}
+  function r2(a,b2){return a!=null&&b2?a/b2:null}
+  row('Spend per passenger (KEY)','spp',usd2,true,false,r2(ly.sales,ly.traffic),r2(lm.sales,lm.traffic));
+  row('Total sales','sales',usd,false,true,ly.sales,lm.sales);
+  row('Total traffic','traffic',n0,false,true,ly.traffic,lm.traffic);
+  row('Transactions','txns',n0,false,true,ly.txns,lm.txns);
+  row('Conversion rate','conv',function(v){return pc(v,2)},false,false,r2(ly.txns,ly.traffic),r2(lm.txns,lm.traffic));
+  row('Average ticket','ticket',usd2,false,false,r2(ly.sales,ly.txns),r2(lm.sales,lm.txns));
+  h+='</table>';
+  if(act&&act.traffic==null)h+='<div class="note">No traffic loaded, so spend per passenger, conversion and ticket can\'t be scored yet. Use Plan B below or add a Daily sheet with traffic and transactions.</div>';
+  h+='</div>';
+  // Plan B
+  var sts=UI.store==='NAM'?STORES:[UI.store],cardB='<div class="card"><h3>Plan B · if traffic data is unreliable</h3><div class="mut">Sales growth vs. last year. Baseline = underlying trend; target = trend + '+(CFG.lift*100).toFixed(0)+' pts.</div><table><tr><th>Airport</th><th>Trend (baseline)</th><th>Target</th><th>Actual vs. last year</th><th class="l">Status</th></tr>';
+  var anyB=false;
+  sts.forEach(function(s){var c=CFG.stores[s],a=actualFor(s);if(c.trend==null)return;anyB=true;
+    var tg=c.trend+CFG.lift,lyS=c.lySales,ac=(a&&lyS?a.sales/(lyS*(a.pace)) -1:null);
+    cardB+='<tr><td>'+s+'</td><td>'+pct(c.trend,0)+'</td><td>'+pct(tg,0)+'</td><td class="'+cls(ac)+'">'+(ac!=null?pct(ac):'enter last-year sales in Setup')+'</td><td class="l">'+(ac!=null?(ac>=tg?'<span class="pill g">At or above target</span>':ac>=c.trend?'<span class="pill y">Above baseline</span>':'<span class="pill r">Below baseline</span>'):'')+'</td></tr>'});
+  cardB+='</table></div>';
+  if(anyB)h+=cardB;
+  h+='<div class="card"><h3>Daily sales</h3><div class="mut">Bars are daily sales. Gold bars are days with an activation.</div>'+dailyChart(UI.store)+'</div>';
+  el.innerHTML=h;wire(el);
+}
+function dailyChart(store){
+  var dates=D.dates;if(!dates.length)return'<div class="empty">No sales loaded.</div>';
+  var stores=store==='NAM'?STORES:[store];
+  var vals=dates.map(function(d){var s=0,a=false;stores.forEach(function(x){var o=D.day[x+'|'+d];if(o)s+=o.sales;if(hasAct(x,d))a=true});return{d:d,s:s,a:a}});
+  var W=1100,H=230,pl=56,pr=10,pt=10,pb=34,mx=Math.max.apply(null,vals.map(function(v){return v.s}))*1.1||1;
+  var bw=(W-pl-pr)/vals.length,g='';
+  for(var i=0;i<=4;i++){var y=pt+(H-pt-pb)*(1-i/4);g+='<line x1="'+pl+'" x2="'+(W-pr)+'" y1="'+y+'" y2="'+y+'" stroke="#e5ddd5"/><text x="'+(pl-6)+'" y="'+(y+4)+'" text-anchor="end" font-size="11" fill="#8a837b">'+short(mx*i/4)+'</text>'}
+  vals.forEach(function(v,i){var h=(H-pt-pb)*v.s/mx,x=pl+i*bw+bw*.15;
+    g+='<rect x="'+x+'" y="'+(H-pb-h)+'" width="'+(bw*.7)+'" height="'+h+'" fill="'+(v.a?'#c9a45c':'#cfc7bb')+'"><title>'+lab(v.d)+': '+usd(v.s)+(v.a?' · activation':'')+'</title></rect>';
+    if(vals.length<=40||i%3===0)g+='<text x="'+(x+bw*.35)+'" y="'+(H-pb+14)+'" text-anchor="middle" font-size="10" fill="#8a837b">'+(pd(v.d).getUTCMonth()+1)+'/'+pd(v.d).getUTCDate()+'</text>'});
+  return'<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:auto">'+g+'</svg>'}
+
+/* ============ CALENDAR (shared by A/B and Schedule) ============ */
+var SHIFT={M:'AM',D:'Mid',N:'PM'},CALM={};
+var MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
+function calMonth(id){return CALM[id]||(CALM[id]=((CFG.start||(D.dates&&D.dates[0])||iso(new Date())).slice(0,7)))}
+function shiftMonth(m,dir){var y=+m.slice(0,4),mo=+m.slice(5,7)-1+dir;var d=new Date(Date.UTC(y,mo,1));return iso(d).slice(0,7)}
+function calHTML(o){
+  var m=calMonth(o.id),y=+m.slice(0,4),mo=+m.slice(5,7)-1,first=new Date(Date.UTC(y,mo,1)),dim=new Date(Date.UTC(y,mo+1,0)).getUTCDate(),pad=first.getUTCDay();
+  var h='<div class="cal'+(o.big?' big':'')+'"><div class="calh"><button data-calnav="'+o.id+'" data-dir="-1">‹</button><b>'+MONTHS[mo]+' '+y+'</b><button data-calnav="'+o.id+'" data-dir="1">›</button></div><div class="calg">'+DOW.map(function(d){return'<div class="h">'+d+'</div>'}).join('');
+  for(var i=0;i<pad;i++)h+='<div class="day blank"></div>';
+  for(var d=1;d<=dim;d++){
+    var ds=m+'-'+('0'+d).slice(-2),acts=(D.act[o.store+'|'+ds]||[]).filter(function(a){return !o.side||a.side===o.side});
+    var hasData=!!(D.day[o.store+'|'+ds]&&D.day[o.store+'|'+ds].sales>0),sel=o.selected===ds;
+    var cl='day'+(excluded(ds)?' x':'')+(o.pick?(hasData?' pick':' nodata'):'')+(sel?' sel':'');
+    h+='<div class="'+cl+'"'+(o.pick&&hasData?' data-pick="'+o.id+'" data-d="'+ds+'"':'')+'><b>'+d+'</b>'+(o.pick&&hasData?'<span class="dot" title="Sales loaded"></span>':'')+
+      acts.map(function(a){var s=SHIFT[a.shift]||a.shift,k=(o.store==='SFO'&&!o.side&&a.side!=='All')?a.side+' ':'';
+        return'<span class="tag key '+(a.side==='G'?'G':a.side==='All'?'L':'')+'" title="KEY '+s+' · '+esc(a.type)+' · '+esc(a.side)+'">'+k+esc(a.type)+' · '+s+'</span>'}).join('')+'</div>'}
+  return h+'</div></div>'}
+function calNav(id,dir){CALM[id]=shiftMonth(calMonth(id),dir);if(id==='pk')renderPicker();else if(UI.tab==='ab')renderAB();else renderSched()}
+
+/* ============ A/B: THREE DAYS SIDE BY SIDE ============ */
+var LOCS=['SFO A','SFO G','LAX'];
+function locStore(l){return l.slice(0,3)}
+function locSide(l){return l==='SFO A'?'A':l==='SFO G'?'G':null}
+function dayLabel(loc,d){
+  var st=locStore(loc),sd=locSide(loc),acts=(D.act[st+'|'+d]||[]).filter(function(a){return !sd||a.side===sd});
+  if(excluded(d))return'Excluded day';
+  if(!acts.length)return'No activation';
+  var keys=[];acts.forEach(function(a){var k=SHIFT[a.shift]||a.shift;if(keys.indexOf(k)<0)keys.push(k)});
+  return'KEY '+keys.join(' + ')+' · '+acts.map(function(a){return a.type+' '+(SHIFT[a.shift]||a.shift)}).join(', ')}
+function dayChoices(store){var set={};Object.keys(D.day).forEach(function(k){if(D.day[k].s===store&&D.day[k].sales>0)set[D.day[k].d]=1});return Object.keys(set).sort()}
+function defaultAB(){
+  var loc='SFO A',s='SFO',ds=dayChoices(s),a=ds.filter(function(d){return hasActSide(loc,d)&&inWin(d)})[0]||null,cols=[{loc:loc,day:a},{loc:loc,day:null},{loc:loc,day:null}];
+  if(a){var c=ds.filter(function(d){return d!==a&&dow(d)===dow(a)&&!hasAct(s,d)&&!excluded(d)});c.sort(function(x,y){return Math.abs(daysBetween(x,a))-Math.abs(daysBetween(y,a))});cols[1].day=c[0]||null;cols[2].day=c[1]||null}
+  return{cols:cols}}
+function hasActSide(loc,d){var sd=locSide(loc);return (D.act[locStore(loc)+'|'+d]||[]).some(function(a){return !sd||a.side===sd})}
+function colScoreHTML(c){
+  var st=locStore(c.loc),o=D.day[st+'|'+c.day];
+  if(!o||!(o.sales>0))return'<div class="mut">No sales loaded for this day.</div>';
+  var m=dayMetrics(o),b=storeBase(st),N=campDays()||31,t=b?targetOf(b):null;
+  function row(label,key,fmt,keyRow,perDay){
+    var v=m[key],bv=b?(perDay?b[key]/N:b[key]):null,tv=t?(perDay?t[key]/N:t[key]):null,vb=(v!=null&&bv)?v/bv-1:null;
+    return'<tr'+(keyRow?' class="key"':'')+'><td>'+label+'</td><td>'+(v!=null?fmt(v):'–')+'</td><td>'+(bv!=null?fmt(bv):'–')+'</td><td class="'+cls(vb)+'">'+pct(vb)+'</td><td class="l">'+(v!=null&&tv!=null?(v>=tv?'<span class="pill g">On target</span>':v>=bv?'<span class="pill y">Above</span>':'<span class="pill r">Below</span>'):'')+'</td></tr>'}
+  var h='<table><tr><th class="l">Metric</th><th>Day</th><th>Baseline</th><th>vs base</th><th class="l"></th></tr>';
+  h+=row('Spend per passenger','spp',usd2,true,false)+row('Total sales','sales',usd,false,true)+row('Traffic','traffic',n0,false,true)+row('Transactions','txns',n0,false,true)+row('Conversion','conv',function(v){return pc(v,2)},false,false)+row('Average ticket','ticket',usd2,false,false);
+  h+='</table>';
+  if(!b)h+='<div class="mut" style="margin-top:6px">Enter baselines in Setup to score this day.</div>';
+  return h}
+function renderAB(){
+  var el=$('p-ab');
+  if(!UI.ab||(!UI.abTouched&&!UI.ab.cols[0].day))UI.ab=defaultAB();
+  var P=UI.ab,h='<div class="sect"><h3>A / B</h3><div class="hint">Pick up to three days. Choose the location, then tap the date to open the full schedule calendar. Each column is scored like the Scorecard, with the baseline spread evenly across the campaign days.</div><div class="abcols">';
+  P.cols.forEach(function(c,i){
+    h+='<div class="abcol"><div class="abh"><span class="abl">'+'ABC'[i]+'</span><select data-abloc="'+i+'">'+LOCS.map(function(s){return'<option'+(s===c.loc?' selected':'')+'>'+s+'</option>'}).join('')+'</select>'+(c.day?'<button class="sm" data-abclear="'+i+'" style="margin-left:auto">Clear</button>':'')+'</div>'+
+      '<button class="datebtn" data-abopen="'+i+'"><span class="lbl">Date</span><b>'+(c.day?esc(lab(c.day)):'Pick a day')+'</b><span class="ico">📅</span></button>'+
+      '<div class="abday">'+(c.day?'<span class="'+(hasActSide(c.loc,c.day)?'key':'')+'">'+esc(dayLabel(c.loc,c.day))+'</span>':'')+'</div>'+(c.day?colScoreHTML(c):'<div class="empty" style="padding:24px">No day picked</div>')+'</div>'});
+  h+='</div>';
+  var cs=P.cols.map(function(c,i){var o=c.day&&D.day[locStore(c.loc)+'|'+c.day];return{i:i,L:'ABC'[i],c:c,st:locStore(c.loc),o:o}}).filter(function(x){return x.o&&x.o.sales>0});
+  var stores={},wd={};cs.forEach(function(x){stores[x.st]=1;wd[dow(x.c.day)]=1});
+  if(cs.some(function(x){return x.c.loc.indexOf('SFO')===0}))h+='<div class="note">SFO sales come in as one total for A and G together, so an A-side or G-side column shows the whole terminal with only that side\'s activations tagged.</div>';
+  if(Object.keys(wd).length>1)h+='<div class="note">Different weekdays, so this is not like-for-like. Weekday swings can be bigger than any activation effect.</div>';
+  if(Object.keys(stores).length>1)h+='<div class="note">Different airports: raw dollars aren\'t comparable (LAX is bigger). Look at spend per passenger, conversion and ticket.</div>';
+  if(cs.length<2){h+='<div class="empty" style="margin-top:12px">'+(SALES.length?'Pick at least two days with sales loaded to compare.':'Load sales to compare.')+'</div></div>';el.innerHTML=h;return}
+  var base=cs[0],rows=[['Sales','sales',usd],['Units sold','units',n0],['Traffic','traffic',n0],['Transactions','txns',n0],['Spend per passenger','spp',usd2],['Conversion','conv',function(v){return pc(v,2)}],['Average ticket','ticket',usd2],['Flights','flights',n0],['Seats','seats',n0],['Flight passengers (load)','pax',n0],['Load factor','lf',function(v){return pc(v,1)}],['Sales per flight passenger','spf',usd2]];
+  cs.forEach(function(x){var m=dayMetrics(x.o),L=D.load[x.st+'|'+x.c.day];x.m=m;m.flights=L?L.flights:null;m.seats=L?L.seats:null;m.pax=L?L.pax:null;m.lf=(L&&L.seats&&L.pax)?L.pax/L.seats:null;m.spf=(L&&L.pax)?x.o.sales/L.pax:null});
+  h+='<h3 style="margin-top:16px">Side by side</h3><table><tr><th class="l">Measure</th>'+cs.map(function(x){return'<th>'+x.L+' · '+x.c.loc+' '+lab(x.c.day)+'</th>'}).join('')+cs.slice(1).map(function(x){return'<th>'+x.L+' vs. '+base.L+'</th>'}).join('')+'</tr>';
+  rows.forEach(function(r){if(!cs.some(function(x){return x.m[r[1]]!=null}))return;
+    h+='<tr'+(r[1]==='spp'||(r[1]==='sales'&&base.m.spp==null)?' class="key"':'')+'><td>'+r[0]+'</td>'+cs.map(function(x){var v=x.m[r[1]];return'<td>'+(v!=null?r[2](v):'–')+'</td>'}).join('')+cs.slice(1).map(function(x){var a=x.m[r[1]],b=base.m[r[1]],l=(a!=null&&b)?a/b-1:null;return'<td class="'+cls(l)+'">'+pct(l)+'</td>'}).join('')+'</tr>'});
+  h+='</table><div class="grid" style="margin-top:14px">';
+  cs.forEach(function(x){var rs=SALES.filter(function(r){return r.s===x.st&&r.d===x.c.day});
+    h+=miniList(x.L+' · top brands by sales',topBy(rs,function(r){return r.b},'sales',3),'sales');
+    if(rs.some(function(r){return r.u}))h+=miniList(x.L+' · top brands by units',topBy(rs,function(r){return r.b},'units',3),'units')});
+  h+='</div></div>';el.innerHTML=h}
+/* full-screen day picker */
+function openPicker(i){UI.pk=i;var c=UI.ab.cols[i];CALM.pk=(c.day||CFG.start||D.dates[0]||iso(new Date())).slice(0,7);renderPicker()}
+function renderPicker(){
+  var c=UI.ab.cols[UI.pk],st=locStore(c.loc);
+  $('modalHost').innerHTML='<div class="scrim full"><div class="fullcal"><div class="fch"><div><div class="lbl">Pick a day for '+'ABC'[UI.pk]+'</div><div style="font-family:var(--disp);font-size:20px;font-weight:700">'+c.loc+'</div></div><div class="spacer"></div><div class="mut" style="text-align:right">Green dot = sales loaded. Tap a day to select it.<br>Tags show what ran and the shift (AM / Mid / PM). Every tagged day is a key day.</div><button data-pkclose>Close</button></div>'+calHTML({id:'pk',store:st,side:locSide(c.loc),selected:c.day,pick:true,big:true})+'</div></div>'}
+
+/* ============ TOP PERFORMERS ============ */
+function topBy(rows,keyFn,metric,n){
+  var m={};rows.forEach(function(r){var k=keyFn(r);if(!k)return;m[k]=(m[k]||0)+(metric==='units'?(r.u||0):r.$)});
+  return Object.keys(m).map(function(k){return[k,m[k]]}).sort(function(a,b){return b[1]-a[1]}).slice(0,n||5)}
+function fmtM(metric,v){return metric==='units'?n0(v)+' units':usd(v)}
+function weekOf(d){var s=CFG.start||D.dates[0];return 'Week '+(Math.floor(daysBetween(s,d)/7)+1)}
+function miniList(title,list,metric){return'<div class="mini"><h4>'+esc(title)+'</h4>'+(list.length?'<ol>'+list.map(function(x){return'<li><span>'+esc(x[0])+'</span><span>'+fmtM(metric,x[1])+'</span></li>'}).join('')+'</ol>':'<div class="mut">No data</div>')+'</div>'}
+function renderTop(){
+  var el=$('p-top'),rows=D.win;
+  if(!rows.length){el.innerHTML='<div class="empty">Load a sales file with brand-level daily sales to see top performers.</div>';return}
+  var M=UI.metric,hasUnits=rows.some(function(r){return r.u});
+  if(!hasUnits&&M==='units')M=UI.metric='sales';
+  var h='<div class="chips"><div class="chip'+(M==='sales'?' on':'')+'" data-metric="sales">By sales</div><div class="chip'+(M==='units'?' on':'')+'" data-metric="units">By units sold</div></div>';
+  var brand=function(r){return r.b};
+  h+='<div class="card"><h3>Top brands, cut different ways</h3><div class="mut">Top 5 brands each. '+(M==='units'?'Volume is units sold.':'Sales in dollars.')+'</div><div class="grid" style="margin-top:10px">';
+  h+=miniList('Whole network',topBy(rows,brand,M),M);
+  STORES.forEach(function(s){h+=miniList(s,topBy(rows.filter(function(r){return r.s===s}),brand,M),M)});
+  var A=rows.filter(function(r){return hasAct(r.s,r.d)}),N=rows.filter(function(r){return !hasAct(r.s,r.d)&&!excluded(r.d)});
+  h+=miniList('On activation days',topBy(A,brand,M),M);
+  h+=miniList('On no-activation days',topBy(N,brand,M),M);
+  var weeks=[];rows.forEach(function(r){var w=weekOf(r.d);if(weeks.indexOf(w)<0)weeks.push(w)});weeks.sort(function(a,b){return parseInt(a.slice(5))-parseInt(b.slice(5))});
+  weeks.forEach(function(w){h+=miniList(w,topBy(rows.filter(function(r){return weekOf(r.d)===w}),brand,M),M)});
+  var wk=rows.filter(function(r){var x=dow(r.d);return x===0||x===6}),wd=rows.filter(function(r){var x=dow(r.d);return x!==0&&x!==6});
+  h+=miniList('Weekends',topBy(wk,brand,M),M);h+=miniList('Weekdays',topBy(wd,brand,M),M);
+  h+='</div></div>';
+  var cats=topBy(rows,function(r){return r.c},M,8);
+  h+='<div class="card"><h3>Categories</h3><div class="grid" style="margin-top:10px">'+miniList('Top categories',cats,M);
+  cats.slice(0,5).forEach(function(c){h+=miniList('Top in '+c[0],topBy(rows.filter(function(r){return r.c===c[0]}),brand,M,3),M)});
+  h+='</div></div>';
+  // Best days
+  var dm={};rows.forEach(function(r){var k=r.s+'|'+r.d;dm[k]=(dm[k]||0)+(M==='units'?(r.u||0):r.$)});
+  var dl=Object.keys(dm).map(function(k){var p=k.split('|');return[p[0]+' · '+lab(p[1])+(hasAct(p[0],p[1])?' (activation)':''),dm[k],p[0]]}).sort(function(a,b){return b[1]-a[1]});
+  h+='<div class="card"><h3>Best days</h3><div class="grid" style="margin-top:10px">'+miniList('Network best days',(function(){var t={};rows.forEach(function(r){t[r.d]=(t[r.d]||0)+(M==='units'?(r.u||0):r.$)});return Object.keys(t).map(function(d){return[lab(d),t[d]]}).sort(function(a,b){return b[1]-a[1]}).slice(0,5)})(),M);
+  STORES.forEach(function(s){h+=miniList(s+' best days',dl.filter(function(x){return x[2]===s}).slice(0,5),M)});
+  h+='</div></div>';
+  el.innerHTML=h;wire(el);
+}
+
+/* ============ CALL-OUTS ============ */
+function renderCallouts(){
+  var el=$('callouts'),rows=D.win;
+  if(!rows.length){el.innerHTML='<div class="co"><div class="k">No sales loaded</div><div class="v">–</div><div class="s">Load a sales file or try the demo data in Setup.</div></div>';return}
+  var total=rows.reduce(function(a,r){return a+r.$},0),units=rows.reduce(function(a,r){return a+(r.u||0)},0);
+  var tb=topBy(rows,function(r){return r.b},'sales',1)[0],tu=topBy(rows,function(r){return r.b},'units',1)[0],tc=topBy(rows,function(r){return r.c},'sales',1)[0];
+  var t={};rows.forEach(function(r){t[r.s+'|'+r.d]=(t[r.s+'|'+r.d]||0)+r.$});
+  var best=Object.keys(t).sort(function(a,b){return t[b]-t[a]})[0];
+  var h='<div class="co"><div class="k">Sales to date</div><div class="v">'+short(total)+'</div><div class="s">'+n0(units)+' units · '+D.dates.length+' days</div></div>';
+  if(tb)h+='<div class="co"><div class="k">Top brand by sales</div><div class="v">'+esc(tb[0])+'</div><div class="s">'+usd(tb[1])+'</div></div>';
+  if(tu&&units)h+='<div class="co"><div class="k">Top brand by units</div><div class="v">'+esc(tu[0])+'</div><div class="s">'+n0(tu[1])+' units</div></div>';
+  if(tc)h+='<div class="co"><div class="k">Top category</div><div class="v">'+esc(tc[0])+'</div><div class="s">'+usd(tc[1])+'</div></div>';
+  if(best){var p=best.split('|');h+='<div class="co"><div class="k">Best single day</div><div class="v">'+p[0]+' '+lab(p[1])+'</div><div class="s">'+usd(t[best])+(hasAct(p[0],p[1])?' · activation day':'')+'</div></div>'}
+  el.innerHTML=h;
+}
+
+/* ============ SCHEDULE ============ */
+function renderSched(){
+  var el=$('p-sched');
+  if(!CFG.activations.length){el.innerHTML='<div class="empty">No activations scheduled. Add them in Setup &amp; data, or load them from the template\'s Activations sheet.</div>';return}
+  var defs=[['sch-sfo-a','SFO','A','SFO · A side'],['sch-sfo-g','SFO','G','SFO · G side'],['sch-lax','LAX',null,'LAX']];
+  var h='<div class="sect"><h3>Schedule</h3><div class="hint">AM, Mid and PM show the shift each activation runs. Every day with an activation is a key day. Greyed days are excluded.</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:14px">';
+  defs.forEach(function(d){h+='<div><div class="lbl" style="margin-bottom:6px">'+d[3]+'</div>'+calHTML({id:d[0],store:d[1],side:d[2]})+'</div>'});
+  el.innerHTML=h+'</div></div>'}
+
+/* ============ CAMPAIGN EXECUTION ============ */
+var KINDS=['Campaign art','Floor photo','Floor plan'],TAGS=['Weather','Staffing','Traffic','Ops','Other'],MOVEK=['Retimed','Cancelled','Gate change','Other'];
+function shrinkImage(file,maxPx,q){
+  maxPx=maxPx||1200;q=q||0.75;
+  return new Promise(function(res,rej){var fr=new FileReader();fr.onerror=function(){rej(new Error('read failed'))};
+    fr.onload=function(){var img=new Image();img.onerror=function(){rej(new Error('not an image'))};
+      img.onload=function(){var s=Math.min(1,maxPx/Math.max(img.width,img.height)),c=document.createElement('canvas');c.width=Math.round(img.width*s);c.height=Math.round(img.height*s);
+        var cx=c.getContext('2d');cx.fillStyle='#fff';cx.fillRect(0,0,c.width,c.height);cx.drawImage(img,0,0,c.width,c.height);res(c.toDataURL('image/jpeg',q))};
+      img.src=fr.result};fr.readAsDataURL(file)})}
+function ranList(){
+  var by={};CFG.activations.forEach(function(a){var k=a.type;(by[k]=by[k]||[]).push(a)});
+  return Object.keys(by).sort().map(function(k){var L=by[k].slice().sort(function(a,b){return a.date<b.date?-1:1});
+    return{type:k,n:L.length,txt:L.map(function(a){return a.store+(a.side==='All'?'':' '+a.side)+' '+lab(a.date).split(' ')[1]+' '+(SHIFT[a.shift]||a.shift)}).join(', ')}})}
+function numbersHTML(){
+  var a=actualFor('NAM'),b=baseFor('NAM'),t=b?targetOf(b):null;
+  if(!a)return'<div class="mut">No sales loaded yet.</div>';
+  var tb=topBy(D.win,function(r){return r.b},'sales',1)[0],tu=topBy(D.win,function(r){return r.b},'units',1)[0];
+  var sppV=(a.spp!=null&&b)?a.spp/b.spp-1:null;
+  return'<div class="kread"><div><div class="k">Sales to date</div><div class="v">'+short(a.sales)+'</div><div class="s">'+a.dates+' days loaded</div></div>'+
+   '<div><div class="k">Units sold</div><div class="v">'+n0(a.units)+'</div></div>'+
+   (a.spp!=null?'<div><div class="k">Spend per passenger</div><div class="v">'+usd2(a.spp)+'</div><div class="s">'+(sppV!=null?pct(sppV)+' vs baseline':'')+'</div></div>':'')+
+   (tb?'<div><div class="k">Top brand (sales)</div><div class="v" style="font-size:14px">'+esc(tb[0])+'</div><div class="s">'+usd(tb[1])+'</div></div>':'')+
+   (tu&&a.units?'<div><div class="k">Top brand (units)</div><div class="v" style="font-size:14px">'+esc(tu[0])+'</div><div class="s">'+n0(tu[1])+' units</div></div>':'')+'</div>'}
+function renderExec(){
+  var el=$('p-exec'),X=EXEC,h='';
+  h+='<div class="sect"><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><div style="flex:1;min-width:240px"><h3>Campaign execution</h3><div class="mut">The story, photos, floor plans and floor notes behind the numbers. Everything saves as you go.</div></div><button class="pri" data-x="print">Print / PDF report</button></div></div>';
+  h+='<div class="sect"><h3>What the numbers say</h3><div class="hint">Live from the sales you loaded.</div>'+numbersHTML()+'</div>';
+  var rl=ranList();
+  h+='<div class="sect"><h3>What ran</h3><div class="hint">Pulled from the Schedule. Add anything it doesn\'t know about below.</div>'+(rl.length?'<ul class="rlist">'+rl.map(function(r){return'<li><div class="grow"><span class="t">'+esc(r.type)+'</span> <span class="m">'+r.n+' shift'+(r.n===1?'':'s')+'</span><br><span class="mut">'+esc(r.txt)+'</span></div></li>'}).join('')+'</ul>':'<div class="mut">Nothing scheduled.</div>')+
+    '<div class="row" style="margin-top:12px"><label>Anything else we ran</label><textarea data-f="ran" placeholder="Staffing, sampling hours, a gondola we rebuilt mid-period, a late-arriving fixture.">'+esc(X.ran)+'</textarea></div></div>';
+  h+='<div class="sect"><h3>The story</h3><div class="hint">The part an executive actually reads. Keep it plain.</div>'+
+    '<div class="row"><label>What we set out to do</label><textarea data-f="objective" placeholder="The goal in a sentence or two.">'+esc(X.objective)+'</textarea></div>'+
+    '<div class="row"><label>What worked</label><textarea data-f="worked" placeholder="Which mechanic pulled, which fixture converted, which day surprised us.">'+esc(X.worked)+'</textarea></div>'+
+    '<div class="row"><label>What we\'d change</label><textarea data-f="change" placeholder="Honest read. It makes the wins credible next time.">'+esc(X.change)+'</textarea></div></div>';
+  h+='<div class="sect"><h3>Photos, campaign art &amp; floor plans</h3><div class="hint">Images are resized on the way in and kept in this browser. Click one to enlarge.</div>'+
+    '<div class="f" style="align-items:flex-end"><label>Type<select id="phKind">'+KINDS.map(function(k){return'<option>'+k+'</option>'}).join('')+'</select></label><label>Airport<select id="phStore"><option>All</option><option>SFO</option><option>LAX</option></select></label><button data-x="addphoto">Add images</button><input type="file" id="photoFile" accept="image/*" multiple style="display:none"></div>';
+  if(!X.photos.length)h+='<div class="drop" data-x="addphoto">Nothing here yet. Tap to add images</div>';
+  KINDS.forEach(function(k){var L=X.photos.filter(function(p){return p.kind===k});if(!L.length)return;
+    h+='<div class="kindh">'+k+' · '+L.length+'</div><div class="gal">'+L.map(function(p){return'<figure><span class="x" data-rmphoto="'+p.id+'">×</span><img data-lb="'+p.id+'" src="'+(PHOTO[p.id]||'')+'"><figcaption><input type="text" data-cap="'+p.id+'" value="'+esc(p.cap)+'" placeholder="Caption'+(p.store&&p.store!=='All'?' ('+p.store+')':'')+'"></figcaption></figure>'}).join('')+'</div>'});
+  h+='</div>';
+  h+='<div class="sect"><h3>From the floor</h3><div class="hint">Notes from the team on the day: weather, staffing, traffic, how it felt.</div>'+
+    '<div class="f" style="align-items:flex-end"><label>Date<input type="date" id="nDt"></label><label>Airport<select id="nSt"><option>SFO</option><option>LAX</option></select></label><label>Who<input type="text" id="nWho" placeholder="Name, role" style="width:140px"></label><label>Tag<select id="nTag">'+TAGS.map(function(k){return'<option>'+k+'</option>'}).join('')+'</select></label></div>'+
+    '<div class="row"><textarea id="nTx" style="min-height:52px" placeholder="What happened"></textarea></div><button data-x="addnote">Add note</button>'+
+    (X.notes.length?'<ul class="rlist">'+X.notes.slice().sort(function(a,b){return a.date<b.date?1:-1}).map(function(n){return'<li><div class="grow"><span class="t">'+esc(n.who||'Team')+'</span> <span class="m">'+esc(n.store)+' · '+(n.date?lab(n.date):'')+' · '+esc(n.tag)+'</span><br>'+esc(n.text)+'</div><button class="sm" data-rmnote="'+n.id+'">Remove</button></li>'}).join('')+'</ul>':'')+'</div>';
+  h+='<div class="sect"><h3>Flight changes</h3><div class="hint">Retimed, cancelled or moved flights that hit the floor.</div>'+
+    '<div class="f" style="align-items:flex-end"><label>Date<input type="date" id="mDt"></label><label>Airport<select id="mSt"><option>SFO</option><option>LAX</option></select></label><label>Flight<input type="text" id="mFl" placeholder="CA 984" style="width:100px"></label><label>What<select id="mKd">'+MOVEK.map(function(k){return'<option>'+k+'</option>'}).join('')+'</select></label></div>'+
+    '<div class="row"><textarea id="mTx" style="min-height:52px" placeholder="Detail"></textarea></div><button data-x="addmove">Add flight change</button>'+
+    (X.moves.length?'<ul class="rlist">'+X.moves.slice().sort(function(a,b){return a.date<b.date?1:-1}).map(function(n){return'<li><div class="grow"><span class="t">'+esc(n.kind)+' '+esc(n.flt)+'</span> <span class="m">'+esc(n.store)+' · '+(n.date?lab(n.date):'')+'</span><br>'+esc(n.detail)+'</div><button class="sm" data-rmmove="'+n.id+'">Remove</button></li>'}).join('')+'</ul>':'')+'</div>';
+  el.innerHTML=h}
+function bindExec(){
+  var el=$('p-exec');
+  el.addEventListener('input',function(e){var t=e.target;
+    if(t.dataset.f){EXEC[t.dataset.f]=t.value;save()}
+    else if(t.dataset.cap){var p=EXEC.photos.filter(function(x){return x.id===t.dataset.cap})[0];if(p){p.cap=t.value;save()}}});
+  el.addEventListener('change',function(e){var t=e.target;if(t.id==='photoFile')addPhotos(t)});
+  el.addEventListener('click',function(e){var t=e.target.closest('[data-x],[data-rmphoto],[data-lb],[data-rmnote],[data-rmmove]');if(!t)return;
+    if(t.dataset.x==='addphoto'){$('photoFile').click();return}
+    if(t.dataset.x==='print'){printReport();return}
+    if(t.dataset.lb){$('lbImg').src=PHOTO[t.dataset.lb];$('lb').classList.remove('hidden');return}
+    if(t.dataset.rmphoto){var id=t.dataset.rmphoto;EXEC.photos=EXEC.photos.filter(function(p){return p.id!==id});delete PHOTO[id];DBX.del('p:'+id);save();renderExec();return}
+    if(t.dataset.rmnote){EXEC.notes=EXEC.notes.filter(function(n){return n.id!==t.dataset.rmnote});save();renderExec();return}
+    if(t.dataset.rmmove){EXEC.moves=EXEC.moves.filter(function(n){return n.id!==t.dataset.rmmove});save();renderExec();return}
+    if(t.dataset.x==='addnote'){var tx=$('nTx').value.trim();if(!tx)return;EXEC.notes.push({id:uid('n'),store:$('nSt').value,date:$('nDt').value,who:$('nWho').value.trim(),tag:$('nTag').value,text:tx});save();renderExec();return}
+    if(t.dataset.x==='addmove'){var d=$('mTx').value.trim(),f=$('mFl').value.trim();if(!d&&!f)return;EXEC.moves.push({id:uid('m'),store:$('mSt').value,date:$('mDt').value,flt:f,kind:$('mKd').value,detail:d});save();renderExec();return}})}
+async function addPhotos(inp){
+  var kind=$('phKind').value,store=$('phStore').value,files=Array.prototype.slice.call(inp.files).slice(0,20);
+  for(var i=0;i<files.length;i++){try{var src=await shrinkImage(files[i],kind==='Floor plan'?1800:1200,kind==='Floor plan'?0.82:0.75),id=uid('p');
+    PHOTO[id]=src;await DBX.set('p:'+id,src);EXEC.photos.push({id:id,kind:kind,store:store,cap:files[i].name.replace(/\.[^.]+$/,'').slice(0,60)})}catch(e){}}
+  inp.value='';save();renderExec()}
+function printReport(){
+  var a=actualFor('NAM'),h='<h1>'+esc(CFG.name)+'</h1><div class="mut" style="font-family:var(--mono);margin-bottom:14px">'+esc(CFG.start)+' to '+esc(CFG.end)+' · Campaign report, '+new Date().toLocaleDateString()+'</div>'+numbersHTML();
+  function para(t,v){return v&&v.trim()?'<h3>'+t+'</h3><p>'+esc(v)+'</p>':''}
+  h+=para('What we set out to do',EXEC.objective)+para('What worked',EXEC.worked)+para('What we\'d change',EXEC.change);
+  var rl=ranList();if(rl.length||EXEC.ran)h+='<h3>What ran</h3>'+(rl.length?'<ul class="rlist">'+rl.map(function(r){return'<li><div><b>'+esc(r.type)+'</b> <span class="m">'+r.n+' shifts</span><br><span class="mut">'+esc(r.txt)+'</span></div></li>'}).join('')+'</ul>':'')+(EXEC.ran?'<p>'+esc(EXEC.ran)+'</p>':'');
+  var tb=topBy(D.win,function(r){return r.b},'sales',5);if(tb.length)h+='<h3>Top brands by sales</h3><div class="grid">'+miniList('Whole network',tb,'sales')+miniList('Top by units',topBy(D.win,function(r){return r.b},'units',5),'units')+'</div>';
+  KINDS.forEach(function(k){var L=EXEC.photos.filter(function(p){return p.kind===k});if(L.length)h+='<h3>'+k+'</h3><div class="gal">'+L.map(function(p){return'<figure><img src="'+PHOTO[p.id]+'">'+(p.cap?'<figcaption style="padding:6px 9px">'+esc(p.cap)+'</figcaption>':'')+'</figure>'}).join('')+'</div>'});
+  if(EXEC.notes.length)h+='<h3>From the floor</h3><ul class="rlist">'+EXEC.notes.slice().sort(function(a,b){return a.date<b.date?-1:1}).map(function(n){return'<li><div><b>'+esc(n.who||'Team')+'</b> <span class="m">'+esc(n.store)+' · '+(n.date?lab(n.date):'')+' · '+esc(n.tag)+'</span><br>'+esc(n.text)+'</div></li>'}).join('')+'</ul>';
+  if(EXEC.moves.length)h+='<h3>Flight changes</h3><ul class="rlist">'+EXEC.moves.map(function(n){return'<li><div><b>'+esc(n.kind)+' '+esc(n.flt)+'</b> <span class="m">'+esc(n.store)+' · '+(n.date?lab(n.date):'')+'</span><br>'+esc(n.detail)+'</div></li>'}).join('')+'</ul>';
+  $('printArea').innerHTML=h;setTimeout(function(){window.print()},60)}
+
+/* ============ SETUP ============ */
+function fld(label,path,type,w){var v=path.split('.').reduce(function(o,k){return o&&o[k]},CFG);
+  return'<label>'+label+'<input data-p="'+path+'" type="'+(type||'text')+'" value="'+(v==null?'':esc(v))+'" style="width:'+(w||120)+'px"></label>'}
+function renderSetup(){
+  var el=$('p-setup'),h='';
+  h+='<div class="card"><h3>Campaign</h3><div class="mut">Yellow cells with blue text are inputs. Everything else calculates. Changes save in this browser.</div><div class="f" style="margin-top:10px">'+fld('Name','name','text',200)+fld('Start','start','date')+fld('End','end','date')+fld('Excluded days (comma separated)','excludeStr','text',220)+fld('Target lift in spend per passenger','lift','number',90)+fld('Of which from conversion','convShare','number',90)+'</div>';
+  h+='<div class="mut">Lift and conversion are decimals (0.03 = 3%).</div></div>';
+  h+='<div class="card"><h3>Baselines &amp; targets (from Finance)</h3><div class="hint">This is where the baseline lives. Type the numbers in below, or send Finance the baseline sheet, have them fill it in, and upload it back. Scorecard, A/B and Plan B all update straight away. Traffic for last year and last month goes in the same table.</div>'+
+    '<div class="f">'+fld('Source (who / which file)','baseSource','text',260)+fld('As of','baseAsOf','date')+'</div>'+
+    '<div style="overflow:auto"><table><tr><th class="l" rowspan="2">Airport</th><th colspan="3" style="text-align:center">Baseline, whole campaign</th><th>Trend</th><th colspan="3" style="text-align:center">Last year, same period</th><th colspan="3" style="text-align:center">Last month</th></tr><tr><th>Sales</th><th>Traffic</th><th>Conversion (0.12)</th><th>vs LY (−0.09)</th><th>Sales</th><th>Traffic</th><th>Txns</th><th>Sales</th><th>Traffic</th><th>Txns</th></tr>';
+  STORES.forEach(function(s){h+='<tr><td class="l"><b>'+s+'</b></td>'+['baseSales','baseTraffic','baseConv','trend','lySales','lyTraffic','lyTxns','lmSales','lmTraffic','lmTxns'].map(function(f){var v=CFG.stores[s][f];return'<td><input data-p="stores.'+s+'.'+f+'" type="number" step="any" value="'+(v==null?'':v)+'" style="width:92px"></td>'}).join('')+'</tr>'});
+  h+='</table></div><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button onclick="dlBaseline()">Download baseline sheet for Finance</button><button class="pri" onclick="document.getElementById(\'fileBase\').click()">Upload filled baseline sheet</button><input type="file" id="fileBase" accept=".xlsx,.xls,.csv" style="display:none" onchange="onBaseFile(this)"></div><div class="mut" style="margin-top:8px">Targets calculate from the baseline: +'+(CFG.lift*100).toFixed(1)+'% spend per passenger, traffic held to baseline. Change the lift in the Campaign card above.</div></div>';
+  h+='<div class="card"><h3>Activations ('+CFG.activations.length+')</h3><div class="mut">One row per activation per shift. Add rows, or load them all from the template\'s Activations sheet.</div><div style="max-height:300px;overflow:auto;margin:8px 0"><table><tr><th class="l">Airport</th><th class="l">Side</th><th class="l">Date</th><th class="l">Shift</th><th class="l">Type</th><th></th></tr>';
+  CFG.activations.slice().map(function(a,i){return{a:a,i:i}}).sort(function(x,y){return x.a.date<y.a.date?-1:x.a.date>y.a.date?1:0}).forEach(function(o){var a=o.a;
+    h+='<tr><td class="l">'+esc(a.store)+'</td><td class="l">'+esc(a.side)+'</td><td class="l">'+esc(a.date)+'</td><td class="l">'+esc(a.shift)+'</td><td class="l">'+esc(a.type)+'</td><td><button data-del="'+o.i+'">Remove</button></td></tr>'});
+  h+='</table></div><div class="f"><label>Airport<select id="nStore"><option>SFO</option><option>LAX</option></select></label><label>Side<select id="nSide"><option>A</option><option>G</option><option>All</option></select></label><label>Date<input id="nDate" type="date"></label><label>Shift<select id="nShift"><option>M</option><option>D</option><option>N</option></select></label><label>Type<input id="nType" type="text" placeholder="Painting" style="width:130px"></label><label>&nbsp;<button id="nAdd">Add</button></label></div></div>';
+  h+='<div class="card"><h3>Traffic &amp; flight load</h3><div class="mut">'+DAILY.filter(function(r){return r.traffic!=null}).length+' traffic days · '+LOADS.length+' flight load days loaded.</div><div class="note"><b>Traffic file:</b> Date, Store, Traffic (optionally Transactions). <b>Flight load file:</b> Date, Store, Flights, Seats, Passengers. One row per day and airport, .xlsx or .csv. Each upload merges with what is already loaded.</div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="pri" onclick="pick(\'traffic\')">Upload traffic data</button><button class="pri" onclick="pick(\'loads\')">Upload flight load data</button><input type="file" id="fileExtra" accept=".xlsx,.xls,.csv" style="display:none" onchange="onExtra(this)"></div></div>';
+  h+='<div class="card"><h3>Data &amp; campaigns</h3><div class="mut">'+SALES.length.toLocaleString()+' sales rows · '+DAILY.length+' daily traffic rows loaded.</div><div class="note"><b>Sales file format.</b> One row per day, airport and brand. Columns (any order, names flexible): <b>Date, Store</b> (SFO/LAX), <b>Brand, Category, Sales, Units</b>. Optional second sheet <b>Daily</b>: <b>Date, Store, Traffic, Transactions</b>. Include a few weeks before the campaign so every activation day has a clean like-for-like day. The template download shows the layout.</div><div style="display:flex;gap:8px;flex-wrap:wrap"><button onclick="dlTemplate()">Download data template</button><button onclick="loadDemo()">Load demo data</button><button onclick="clearData()">Clear loaded data</button><button onclick="expCfg()">Export campaign setup</button><button onclick="document.getElementById(\'fileCfg\').click()">Import campaign setup</button><input type="file" id="fileCfg" accept=".json" style="display:none" onchange="impCfg(this)"><button onclick="delCampaign()" style="color:var(--bad)">Delete this campaign</button></div></div>';
+  el.innerHTML=h;
+  Array.prototype.forEach.call(el.querySelectorAll('[data-p]'),function(i){
+    if(i.getAttribute('data-p')==='excludeStr')i.value=(CFG.exclude||[]).join(', ');
+    i.onchange=function(){var p=i.getAttribute('data-p'),v=i.value;
+      if(p==='excludeStr'){CFG.exclude=v.split(',').map(function(x){return x.trim()}).filter(Boolean)}
+      else{var ks=p.split('.'),o=CFG;for(var j=0;j<ks.length-1;j++)o=o[ks[j]];var k=ks[ks.length-1];
+        o[k]=(i.type==='number')?num(v):v}
+      save();refreshAll(true)}});
+  Array.prototype.forEach.call(el.querySelectorAll('[data-del]'),function(b){b.onclick=function(){CFG.activations.splice(+b.getAttribute('data-del'),1);save();refreshAll()}});
+  $('nAdd').onclick=function(){var d=$('nDate').value,t=$('nType').value.trim();if(!d||!t)return;
+    CFG.activations.push({store:$('nStore').value,side:$('nSide').value,date:d,shift:$('nShift').value,type:t});save();refreshAll()};
+}
+function clearData(){SALES=[];DAILY=[];LOADS=[];saveData();refreshAll()}
+function expCfg(){var b=new Blob([JSON.stringify(CFG,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=(CFG.name||'campaign').replace(/\W+/g,'_')+'_setup.json';a.click()}
+function impCfg(inp){var f=inp.files[0];if(!f)return;var r=new FileReader();r.onload=function(){try{var c=JSON.parse(r.result);if(!c.stores||!c.activations)throw 0;CFG=c;save();refreshAll()}catch(e){alert('That file is not a campaign setup.')}};r.readAsText(f);inp.value=''}
+
+/* ============ FILE LOADING ============ */
+function toIso(v){
+  if(v==null||v==='')return null;
+  if(v instanceof Date)return iso(new Date(v.getTime()+12*36e5));
+  if(typeof v==='number'){return iso(new Date(Date.UTC(1899,11,30)+Math.round(v)*864e5))}
+  var s=String(v).trim(),m;
+  if(m=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/))return m[1]+'-'+('0'+m[2]).slice(-2)+'-'+('0'+m[3]).slice(-2);
+  if(m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})/)){var y=+m[3];if(y<100)y+=2000;return y+'-'+('0'+m[1]).slice(-2)+'-'+('0'+m[2]).slice(-2)}
+  return null}
+function normStore(v){var s=String(v||'').toUpperCase();if(s.indexOf('SFO')>=0)return'SFO';if(s.indexOf('LAX')>=0)return'LAX';return null}
+function findCol(hdr,names){for(var i=0;i<hdr.length;i++){var h=String(hdr[i]||'').toLowerCase().trim();for(var j=0;j<names.length;j++)if(h===names[j]||h.indexOf(names[j])===0)return i}return -1}
+function parseSheet(rows){
+  if(!rows.length)return null;
+  var hi=0;for(var i=0;i<Math.min(rows.length,10);i++){if(findCol(rows[i],['date','day'])>=0){hi=i;break}}
+  var H=rows[hi],c={d:findCol(H,['date','day']),s:findCol(H,['store','airport','location']),b:findCol(H,['brand']),c:findCol(H,['category','dept','department']),
+    $:findCol(H,['net sales','sales','amount','revenue']),u:findCol(H,['units','qty','quantity','volume']),t:findCol(H,['traffic','passengers','pax']),x:findCol(H,['transactions','txns','txn'])};
+  if(c.d<0||c.s<0)return null;
+  var out={sales:[],daily:[]};
+  for(var r=hi+1;r<rows.length;r++){var R=rows[r],d=toIso(R[c.d]),s=normStore(R[c.s]);if(!d||!s)continue;
+    if(c.b>=0&&c.$>=0){var sv=num(R[c.$]);if(sv==null)continue;out.sales.push({d:d,s:s,b:String(R[c.b]||'Unknown').trim(),c:c.c>=0?String(R[c.c]||'Other').trim():'Other',$:sv,u:c.u>=0?(num(R[c.u])||0):0})}
+    else if(c.t>=0||c.x>=0){out.daily.push({d:d,s:s,traffic:c.t>=0?num(R[c.t]):null,txns:c.x>=0?num(R[c.x]):null,sales:c.$>=0?num(R[c.$]):null})}}
+  return out}
+function parseActs(rows){
+  var hi=0,H=rows[0]||[];var c={d:findCol(H,['date']),s:findCol(H,['store','airport']),side:findCol(H,['side']),sh:findCol(H,['shift']),t:findCol(H,['type','activation'])};
+  if(c.d<0||c.s<0||c.t<0)return null;var out=[];
+  for(var r=1;r<rows.length;r++){var R=rows[r],d=toIso(R[c.d]),s=normStore(R[c.s]);if(!d||!s||!R[c.t])continue;
+    out.push({store:s,side:c.side>=0?String(R[c.side]||'All'):'All',date:d,shift:c.sh>=0?String(R[c.sh]||'D'):'D',type:String(R[c.t]).trim()})}
+  return out}
+function parseLoadRows(rows){var hi=0;for(var i=0;i<Math.min(rows.length,10);i++){if(findCol(rows[i],['date','day'])>=0){hi=i;break}}
+  var H=rows[hi]||[],c={d:findCol(H,['date','day']),s:findCol(H,['store','airport','location']),f:findCol(H,['flights','departures']),e:findCol(H,['seats','capacity']),p:findCol(H,['passengers','pax','load'])},out=[];
+  if(c.d<0||c.s<0||(c.f<0&&c.e<0&&c.p<0))return out;
+  for(var r=hi+1;r<rows.length;r++){var R=rows[r],d=toIso(R[c.d]),st=normStore(R[c.s]);if(!d||!st)continue;out.push({d:d,s:st,flights:c.f>=0?num(R[c.f]):null,seats:c.e>=0?num(R[c.e]):null,pax:c.p>=0?num(R[c.p]):null})}
+  return out}
+function onFile(inp){
+  var f=inp.files[0];if(!f)return;var rd=new FileReader();
+  rd.onload=function(){try{
+    var wb=XLSX.read(new Uint8Array(rd.result),{type:'array',cellDates:true}),sales=[],daily=[],acts=null,loadsIn=[];
+    wb.SheetNames.forEach(function(n){var rows=XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,defval:null,raw:true});
+      if(/activation/i.test(n)){var a=parseActs(rows);if(a&&a.length)acts=a;return}
+      if(/baseline/i.test(n)){applyBaselines(rows);return}
+      if(/flight|load/i.test(n)){var Lr=parseLoadRows(rows);if(Lr.length)loadsIn=loadsIn.concat(Lr);return}
+      var p=parseSheet(rows);if(p){sales=sales.concat(p.sales);daily=daily.concat(p.daily)}});
+    if(!sales.length&&!daily.length&&!acts)throw new Error('No Date/Store columns found.');
+    if(sales.length||daily.length){SALES=sales;DAILY=daily;saveData()}
+    if(acts){CFG.activations=acts;save()}
+    if(loadsIn.length){LOADS=loadsIn;saveData()}
+    refreshAll();
+    alert('Loaded '+sales.length.toLocaleString()+' sales rows'+(daily.length?', '+daily.length+' daily traffic rows':'')+(acts?', '+acts.length+' activations':'')+'.');
+  }catch(e){alert('Could not read that file: '+e.message)}};
+  rd.readAsArrayBuffer(f);inp.value=''}
+
+var EXTRA=null;
+function pick(kind){EXTRA=kind;$('fileExtra').click()}
+function onExtra(inp){
+  var f=inp.files[0];if(!f)return;var kind=EXTRA,rd=new FileReader();
+  rd.onload=function(){try{
+    var wb=XLSX.read(new Uint8Array(rd.result),{type:'array',cellDates:true}),n=0;
+    wb.SheetNames.forEach(function(nm){var rows=XLSX.utils.sheet_to_json(wb.Sheets[nm],{header:1,defval:null,raw:true});
+      var hi=0;for(var i=0;i<Math.min(rows.length,10);i++){if(findCol(rows[i],['date','day'])>=0){hi=i;break}}
+      var H=rows[hi]||[],c={d:findCol(H,['date','day']),s:findCol(H,['store','airport','location'])};if(c.d<0||c.s<0)return;
+      if(kind==='traffic'){c.t=findCol(H,['traffic','footfall','passengers','pax']);c.x=findCol(H,['transactions','txns','txn']);if(c.t<0&&c.x<0)return;
+        for(var r=hi+1;r<rows.length;r++){var R=rows[r],d=toIso(R[c.d]),st=normStore(R[c.s]);if(!d||!st)continue;
+          var tv=c.t>=0?num(R[c.t]):null,xv=c.x>=0?num(R[c.x]):null;if(tv==null&&xv==null)continue;
+          var ex=DAILY.filter(function(q){return q.d===d&&q.s===st})[0];if(!ex){ex={d:d,s:st,traffic:null,txns:null,sales:null};DAILY.push(ex)}
+          if(tv!=null)ex.traffic=tv;if(xv!=null)ex.txns=xv;n++}}
+      else{c.f=findCol(H,['flights','departures']);c.e=findCol(H,['seats','capacity']);c.p=findCol(H,['passengers','pax','load']);if(c.p<0&&c.f<0&&c.e<0)return;
+        for(var r2=hi+1;r2<rows.length;r2++){var R2=rows[r2],d2=toIso(R2[c.d]),st2=normStore(R2[c.s]);if(!d2||!st2)continue;
+          var o={d:d2,s:st2,flights:c.f>=0?num(R2[c.f]):null,seats:c.e>=0?num(R2[c.e]):null,pax:c.p>=0?num(R2[c.p]):null};
+          LOADS=LOADS.filter(function(q){return !(q.d===d2&&q.s===st2)});LOADS.push(o);n++}}});
+    if(!n)throw new Error('No matching columns found. Need Date, Store and '+(kind==='traffic'?'Traffic.':'Flights / Seats / Passengers.'));
+    saveData();refreshAll();alert('Loaded '+n.toLocaleString()+' '+(kind==='traffic'?'traffic':'flight load')+' rows.');
+  }catch(e){alert('Could not read that file: '+e.message)}};
+  rd.readAsArrayBuffer(f);inp.value=''}
+var BASE_FIELDS=[['baseSales','Baseline sales'],['baseTraffic','Baseline traffic'],['baseConv','Baseline conversion'],['trend','Trend vs last year'],['lySales','Last year sales'],['lyTraffic','Last year traffic'],['lyTxns','Last year transactions'],['lmSales','Last month sales'],['lmTraffic','Last month traffic'],['lmTxns','Last month transactions']];
+function baselineRows(){var r=[['Airport'].concat(BASE_FIELDS.map(function(f){return f[1]}))];STORES.forEach(function(s){r.push([s].concat(BASE_FIELDS.map(function(f){var v=CFG.stores[s][f[0]];return v==null?'':v})))});return r}
+function dlBaseline(){var wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(baselineRows()),'Baselines');XLSX.writeFile(wb,(CFG.name||'Campaign').replace(/\W+/g,'_')+'_Baselines.xlsx')}
+function applyBaselines(rows){
+  var hi=-1;for(var i=0;i<Math.min(rows.length,6);i++){if(findCol(rows[i],['airport','store'])>=0&&findCol(rows[i],['baseline sales'])>=0){hi=i;break}}
+  if(hi<0)return 0;var H=rows[hi],n=0,cs=findCol(H,['airport','store']);
+  for(var r=hi+1;r<rows.length;r++){var st=normStore(rows[r][cs]);if(!st)continue;
+    BASE_FIELDS.forEach(function(f){var ci=-1;for(var k=0;k<H.length;k++)if(String(H[k]||'').toLowerCase().trim()===f[1].toLowerCase())ci=k;if(ci>=0){var v=num(rows[r][ci]);if(rows[r][ci]===''||rows[r][ci]==null)v=null;CFG.stores[st][f[0]]=v}});n++}
+  return n}
+function onBaseFile(inp){var f=inp.files[0];if(!f)return;var rd=new FileReader();rd.onload=function(){try{var wb=XLSX.read(new Uint8Array(rd.result),{type:'array'}),n=0;
+  wb.SheetNames.forEach(function(nm){n+=applyBaselines(XLSX.utils.sheet_to_json(wb.Sheets[nm],{header:1,defval:null}))});
+  if(!n)throw new Error('Use the baseline sheet from "Download baseline sheet for Finance".');CFG.baseAsOf=CFG.baseAsOf||iso(new Date());save();refreshAll();alert('Baselines updated for '+n+' airport'+(n===1?'':'s')+'.')}catch(e){alert('Could not read that file: '+e.message)}};rd.readAsArrayBuffer(f);inp.value=''}
+function dlTemplate(){
+  var wb=XLSX.utils.book_new();
+  var sales=[['Date','Store','Brand','Category','Sales','Units'],['2026-12-01','SFO','Example Brand','Fragrance',1234.5,12],['2026-12-01','LAX','Example Brand','Fragrance',2345.0,20]];
+  var daily=[['Date','Store','Traffic','Transactions'],['2026-12-01','SFO',12000,1450],['2026-12-01','LAX',14000,1900]];
+  var acts=[['Date','Store','Side','Shift','Type']].concat(CFG.activations.map(function(a){return[a.date,a.store,a.side,a.shift,a.type]}));
+  var tg=baselineRows();
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(sales),'Sales');
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(daily),'Daily');
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([['Date','Store','Flights','Seats','Passengers'],['2026-12-01','SFO',310,52000,41000],['2026-12-01','LAX',420,71000,58000]]),'Flight load');
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(acts),'Activations');
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(tg),'Baselines');
+  XLSX.writeFile(wb,'DFA_Campaign_Data_Template.xlsx')}
+
+/* ============ DEMO DATA (for trying the tracker) ============ */
+function loadDemo(){
+  var seed=7;function rnd(){seed=(seed*16807)%2147483647;return seed/2147483647}
+  var brands=[['Chanel','Fragrance',420],['Dior','Fragrance',380],['Jo Malone','Fragrance',150],['Estee Lauder','Skincare',210],['La Mer','Skincare',460],['Clinique','Skincare',90],['MAC','Cosmetics',70],['Charlotte Tilbury','Cosmetics',95],['Ray-Ban','Sunglasses',190],['Tom Ford','Sunglasses',330],['Godiva','Confectionery',45],['Toblerone','Confectionery',25],['Johnnie Walker','Liquor',85],['Hennessy','Liquor',140]];
+  SALES=[];DAILY=[];LOADS=[];
+  var start=CFG.start||'2026-12-01';var first=addDays(start,-14);var last=addDays(start,20);
+  for(var d=first;d<=last;d=addDays(d,1)){var w=dow(d);var wk=(w===5||w===6||w===0)?1.18:(w===1?0.95:1);var xm=(d>=addDays(start,14))?1.06:1;
+    STORES.forEach(function(s){var scale=s==='LAX'?1.7:1,act=hasAct(s,d)?1.07:1,traffic=Math.round((s==='LAX'?14500:12400)*wk*xm*(0.95+rnd()*.1)),sumS=0,txns=Math.round(traffic*(s==='LAX'?.138:.12)*act*(.97+rnd()*.06));
+      brands.forEach(function(b){var units=Math.max(0,Math.round(3.1*scale*wk*act*xm*(26*(0.93+rnd()*.14))*(300/(b[2]+80))*(b[1]==='Confectionery'?3:1)));var sales=units*b[2]*(0.97+rnd()*.06);
+        SALES.push({d:d,s:s,b:b[0],c:b[1],$:Math.round(sales*100)/100,u:units});sumS+=sales});
+      DAILY.push({d:d,s:s,traffic:traffic,txns:txns,sales:null});var fl=Math.round((s==='LAX'?420:310)*wk*(0.97+rnd()*.06)),se=fl*(s==='LAX'?170:168);LOADS.push({d:d,s:s,flights:fl,seats:se,pax:Math.round(se*(0.78+rnd()*.12))})})}
+  saveData();refreshAll();alert('Demo data loaded (made-up numbers, not real sales). Use "Clear loaded data" before loading the real file.')}
+
+/* ============ HOME: CAMPAIGN LIST ============ */
+async function renderHome(){
+  var host=$('viewHome'),cards='';
+  host.innerHTML='<div class="arch"><h2>Campaigns</h2><div class="lede">Every campaign in one place: targets, A/B days, sales, and the photos and story behind it.</div></div>';
+  var items=[];
+  for(var i=0;i<INDEX.length;i++){var e=INDEX[i],c=await DBX.get('c:'+e.id),d=await DBX.get('d:'+e.id)||{sales:[]},thumb='',nph=0;
+    var cfg=(c&&c.cfg)||{},ex=(c&&c.exec)||defaultExec();nph=ex.photos.length;
+    var ph=ex.photos.filter(function(p){return p.kind==='Campaign art'})[0]||ex.photos[0];
+    if(ph){var s=await DBX.get('p:'+ph.id);if(s)thumb=s}
+    var win=(d.sales||[]).filter(function(r){return (!cfg.start||r.d>=cfg.start)&&(!cfg.end||r.d<=cfg.end)}),tot=win.reduce(function(a,r){return a+r.$},0),days={};win.forEach(function(r){days[r.d]=1});
+    items.push({e:e,thumb:thumb,nph:nph,tot:tot,days:Object.keys(days).length,acts:(cfg.activations||[]).length})}
+  cards=items.map(function(x){return'<div class="acard" data-open="'+x.e.id+'"><div class="thumb">'+(x.thumb?'<img src="'+x.thumb+'">':'<span class="none">No photos yet</span>')+(x.nph>1?'<span class="cnt">'+x.nph+' photos</span>':'')+'</div><div class="meta"><div class="nm">'+esc(x.e.name)+'</div><div class="dt">'+esc(x.e.start||'')+' – '+esc(x.e.end||'')+'</div><div class="kpi"><span><i>Sales to date</i><b>'+(x.tot?short(x.tot):'–')+'</b></span><span><i>Days loaded</i><b>'+x.days+'</b></span><span><i>Activations</i><b>'+x.acts+'</b></span></div></div></div>'}).join('');
+  host.innerHTML='<div class="arch"><div style="display:flex;align-items:flex-start;gap:16px;margin-bottom:22px"><div style="flex:1"><h2>Campaigns</h2><div class="lede" style="margin:0">Every campaign in one place: targets, A/B days, sales, and the photos and story behind it.'+(DBX.db?'':' <b style="color:var(--bad)">Saving is off in this browser mode, so work here won\'t be kept.</b>')+'</div></div><button class="btn pri" id="newCamp" style="flex:none">＋ Create campaign</button></div><div class="agrid">'+cards+'</div></div>';
+  $('newCamp').onclick=newCampaignModal;
+  Array.prototype.forEach.call(host.querySelectorAll('[data-open]'),function(c){c.onclick=function(){openCampaign(c.getAttribute('data-open'))}})}
+function newCampaignModal(){
+  $('modalHost').innerHTML='<div class="scrim"><div class="modal"><h3>Create campaign</h3><div class="row"><label>Name</label><input type="text" id="ncName" placeholder="Lunar New Year 2027"></div><div class="two"><div class="row"><label>Start</label><input type="date" id="ncStart"></div><div class="row"><label>End</label><input type="date" id="ncEnd"></div></div><div class="row"><label>Start from</label><select id="ncFrom"><option value="">Blank setup</option>'+INDEX.map(function(e){return'<option value="'+e.id+'">Copy setup from '+esc(e.name)+'</option>'}).join('')+'</select><div class="mut">Copying keeps targets and baselines. Activations, sales and photos start empty.</div></div><div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px"><button onclick="$(\'modalHost\').innerHTML=\'\'">Cancel</button><button class="pri" id="ncGo">Create</button></div></div></div>';
+  $('ncGo').onclick=function(){var n=$('ncName').value.trim();if(!n){alert('Give it a name first.');return}createCampaign(n,$('ncStart').value,$('ncEnd').value,$('ncFrom').value)}}
+async function createCampaign(name,start,end,fromId){
+  var cfg=blankCampaign();
+  if(fromId){var src=await DBX.get('c:'+fromId);if(src){cfg=JSON.parse(JSON.stringify(src.cfg));cfg.activations=[];cfg.exclude=[]}}
+  cfg.name=name;cfg.start=start;cfg.end=end;var id=uid('c');
+  INDEX.unshift({id:id,name:name,start:start,end:end,created:new Date().toISOString()});
+  await DBX.set('index',INDEX);await DBX.set('c:'+id,{id:id,cfg:cfg,exec:defaultExec()});await DBX.set('d:'+id,{sales:[],daily:[],loads:[]});
+  $('modalHost').innerHTML='';openCampaign(id)}
+async function openCampaign(id){
+  var c=await DBX.get('c:'+id);if(!c){goHome();return}
+  var d=(await DBX.get('d:'+id))||{};
+  CAMP={id:id};CFG=c.cfg;EXEC=c.exec||defaultExec();SALES=d.sales||[];DAILY=d.daily||[];LOADS=d.loads||[];PHOTO={};
+  for(var i=0;i<EXEC.photos.length;i++){var s=await DBX.get('p:'+EXEC.photos[i].id);if(s)PHOTO[EXEC.photos[i].id]=s}
+  UI={tab:'score',store:'NAM',metric:'sales'};CALM={};
+  Array.prototype.forEach.call(document.querySelectorAll('.tab'),function(x){x.classList.toggle('on',x.getAttribute('data-t')==='score')});
+  Array.prototype.forEach.call(document.querySelectorAll('.panel'),function(p){p.classList.toggle('on',p.id==='p-score')});
+  $('viewHome').classList.add('hidden');$('viewCamp').classList.remove('hidden');$('bBack').classList.remove('hidden');$('hBtns').classList.remove('hidden');$('hTag').textContent='Campaign';
+  try{history.replaceState(null,'','#'+id)}catch(e){}
+  refreshAll()}
+function goHome(){
+  persistCamp();CAMP=null;$('viewCamp').classList.add('hidden');$('viewHome').classList.remove('hidden');$('bBack').classList.add('hidden');$('hBtns').classList.add('hidden');
+  $('hTitle').textContent='Campaigns';$('hTag').textContent='DFA';$('hSub').textContent='';try{history.replaceState(null,'',location.pathname)}catch(e){}
+  renderHome()}
+async function delCampaign(){
+  if(!confirm('Delete "'+CFG.name+'" with its sales, photos and notes? This can\'t be undone.'))return;
+  var id=CAMP.id;for(var i=0;i<EXEC.photos.length;i++)await DBX.del('p:'+EXEC.photos[i].id);
+  await DBX.del('c:'+id);await DBX.del('d:'+id);INDEX=INDEX.filter(function(x){return x.id!==id});await DBX.set('index',INDEX);CAMP=null;goHome()}
+
+/* ============ WIRING ============ */
+function wire(el){
+  Array.prototype.forEach.call(el.querySelectorAll('[data-store]'),function(c){c.onclick=function(){UI.store=c.getAttribute('data-store');renderScore()}});
+  Array.prototype.forEach.call(el.querySelectorAll('[data-metric]'),function(c){c.onclick=function(){UI.metric=c.getAttribute('data-metric');renderTop()}})}
+function refreshAll(keepSetup){
+  rebuild();$('hTitle').textContent=CFG.name||'Campaign';
+  $('hSub').textContent=(CFG.start&&CFG.end?CFG.start+' to '+CFG.end:'No dates set');
+  renderCallouts();renderScore();renderAB();renderTop();renderSched();
+  if(!(keepSetup&&UI.tab==='exec'))renderExec();
+  if(!keepSetup)renderSetup()}
+function bindCal(panelId){
+  var el=$(panelId);
+  el.addEventListener('click',function(e){
+    var n=e.target.closest('[data-calnav]');if(n){calNav(n.getAttribute('data-calnav'),+n.getAttribute('data-dir'));return}
+    var o=e.target.closest('[data-abopen]');if(o){openPicker(+o.getAttribute('data-abopen'));return}
+    var c=e.target.closest('[data-abclear]');if(c){UI.abTouched=true;UI.ab.cols[+c.getAttribute('data-abclear')].day=null;renderAB()}});
+  el.addEventListener('change',function(e){var s=e.target.closest('[data-abloc]');if(s){var i=+s.getAttribute('data-abloc');UI.abTouched=true;UI.ab.cols[i].loc=s.value;UI.ab.cols[i].day=null;renderAB()}})}
+function bindPicker(){
+  $('modalHost').addEventListener('click',function(e){
+    var n=e.target.closest('[data-calnav]');if(n){calNav(n.getAttribute('data-calnav'),+n.getAttribute('data-dir'));return}
+    var p=e.target.closest('[data-pick]');if(p&&p.getAttribute('data-pick')==='pk'){UI.abTouched=true;UI.ab.cols[UI.pk].day=p.getAttribute('data-d');$('modalHost').innerHTML='';renderAB();return}
+    if(e.target.closest('[data-pkclose]')||e.target.classList.contains('full'))$('modalHost').innerHTML=''})}
+async function init(){
+  Array.prototype.forEach.call(document.querySelectorAll('.tab'),function(t){t.onclick=function(){UI.tab=t.getAttribute('data-t');
+    Array.prototype.forEach.call(document.querySelectorAll('.tab'),function(x){x.classList.toggle('on',x===t)});
+    Array.prototype.forEach.call(document.querySelectorAll('.panel'),function(p){p.classList.toggle('on',p.id==='p-'+UI.tab)})}});
+  bindCal('p-ab');bindCal('p-sched');bindExec();bindPicker();
+  await DBX.open();
+  INDEX=(await DBX.get('index'))||[];
+  if(!INDEX.length){
+    var cfg=holiday26(),sales=[],daily=[],loads=[];
+    try{var oc=localStorage.getItem('dfa_ct_cfg');if(oc)cfg=JSON.parse(oc);var os=localStorage.getItem('dfa_ct_sales');if(os)sales=JSON.parse(os);var od=localStorage.getItem('dfa_ct_daily');if(od)daily=JSON.parse(od);var ol=localStorage.getItem('dfa_ct_loads');if(ol)loads=JSON.parse(ol)}catch(e){}
+    INDEX=[{id:'holiday-2026',name:cfg.name,start:cfg.start,end:cfg.end,created:new Date().toISOString()}];
+    await DBX.set('index',INDEX);await DBX.set('c:holiday-2026',{id:'holiday-2026',cfg:cfg,exec:defaultExec()});await DBX.set('d:holiday-2026',{sales:sales,daily:daily,loads:loads})}
+  var h=(location.hash||'').slice(1);
+  if(h&&INDEX.some(function(x){return x.id===h}))openCampaign(h);else renderHome()}
+init();
+</script>
+</body>
+</html>
